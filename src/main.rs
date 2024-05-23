@@ -1,15 +1,15 @@
+mod auth;
 mod events;
 
 use std::sync::Arc;
 
+use auth::{protect, AuthData};
 use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
 use poem::{
-    async_trait,
-    http::StatusCode,
     listener::TcpListener,
     session::{CookieConfig, CookieSession, Session},
     web::Data,
-    Endpoint, EndpointExt, IntoResponse, Middleware, Request, Response, Result, Route, Server,
+    Endpoint, EndpointExt, Result, Route, Server,
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
 use tokio::sync::broadcast;
@@ -23,55 +23,6 @@ struct Room {
 
 #[derive(Default)]
 pub struct Api;
-
-struct AuthMiddleware;
-
-#[derive(Object, Clone)]
-struct AuthData {
-    username: String,
-}
-
-#[async_trait]
-impl<E: Endpoint> Middleware<E> for AuthMiddleware {
-    type Output = AuthMiddlewareEndpoint<E>;
-
-    fn transform(&self, ep: E) -> Self::Output {
-        AuthMiddlewareEndpoint { ep }
-    }
-}
-
-pub struct AuthMiddlewareEndpoint<E> {
-    ep: E,
-}
-
-#[async_trait]
-impl<E: Endpoint> Endpoint for AuthMiddlewareEndpoint<E> {
-    type Output = Response;
-
-    async fn call(&self, mut req: Request) -> Result<Self::Output> {
-        let session = req.extensions().get::<Session>().cloned().unwrap();
-        let username = session.get::<String>("username");
-
-        match username {
-            Some(username) => {
-                // Attach user information to the request extensions
-                req.extensions_mut().insert(AuthData { username });
-
-                return Ok(self.ep.call(req).await?.into_response());
-            }
-            None => {
-                // Return unauthorized if the session cookie is missing or invalid
-                Ok(Response::builder()
-                    .status(StatusCode::UNAUTHORIZED)
-                    .finish())
-            }
-        }
-    }
-}
-
-fn protect(ep: impl Endpoint) -> impl Endpoint {
-    ep.with(AuthMiddleware)
-}
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct LoginRequest {
