@@ -250,11 +250,29 @@ mod test {
         let app = create_app(Context { bus: bus.clone() }).await.unwrap();
         let client = TestClient::new(app);
 
+        // Login
+        let body = json!({ "username": "Karel" });
+        let resp = client
+            .post("/api/session")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(body.to_string())
+            .send()
+            .await;
+
+        let cookie = resp
+            .0
+            .headers()
+            .get(SET_COOKIE)
+            .and_then(|value| value.to_str().ok())
+            .expect("Failed to get session cookie");
+
+        // chat
         let room_id = Uuid::new_v4();
         let body = json!({"id": room_id.to_string(), "name": "Lustrum Crash & Compile", "creator": "Francken"});
         let resp = client
             .post("/api/rooms")
             .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
             .body(body.to_string())
             .send()
             .await;
@@ -262,10 +280,13 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 2);
+        assert_eq!(recorded_events.len(), 3);
         assert_eq!(
             recorded_events,
             vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Karel".to_string()
+                },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string()
@@ -281,6 +302,7 @@ mod test {
         let resp = client
             .post(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
             .body(body.to_string())
             .send()
             .await;
@@ -288,10 +310,13 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 3);
+        assert_eq!(recorded_events.len(), 4);
         assert_eq!(
             recorded_events,
             vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Karel".to_string()
+                },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string()
@@ -311,6 +336,7 @@ mod test {
         let resp = client
             .post(format!("/api/rooms/{}/messages", room_id))
             .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
             .body(body.to_string())
             .send()
             .await;
@@ -318,10 +344,13 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 4);
+        assert_eq!(recorded_events.len(), 5);
         assert_eq!(
             recorded_events,
             vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Karel".to_string()
+                },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string()
@@ -346,6 +375,7 @@ mod test {
         let resp = client
             .delete(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
             .body(body.to_string())
             .send()
             .await;
@@ -353,10 +383,13 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 5);
+        assert_eq!(recorded_events.len(), 6);
         assert_eq!(
             recorded_events,
             vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Karel".to_string()
+                },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string()
@@ -418,7 +451,7 @@ mod test {
         let resp = client
             .delete("/api/session")
             .header(header::CONTENT_TYPE, "application/json")
-            .header("Cookie", cookie)
+            .header(header::COOKIE, cookie)
             .body(body.to_string())
             .send()
             .await;
