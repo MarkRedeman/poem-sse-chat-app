@@ -41,6 +41,12 @@ pub struct Position {
 #[allow(dead_code)]
 #[derive(Debug, Clone, Serialize, PartialEq)]
 pub enum DomainEvent {
+    UserLoggedIn {
+        username: String,
+    },
+    UserLoggedOut {
+        username: String,
+    },
     RoomWasCreated {
         id: Uuid,
         name: String,

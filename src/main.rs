@@ -3,7 +3,12 @@ mod events;
 use std::sync::Arc;
 
 use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
-use poem::{listener::TcpListener, web::Data, Endpoint, EndpointExt, Result, Route, Server};
+use poem::{
+    listener::TcpListener,
+    session::{CookieConfig, CookieSession, Session},
+    web::Data,
+    Endpoint, EndpointExt, Result, Route, Server,
+};
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
 use tokio::sync::broadcast;
 use uuid::Uuid;
@@ -16,6 +21,12 @@ struct Room {
 
 #[derive(Default)]
 pub struct Api;
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct LoginRequest {
+    #[oai(validator(max_length = 256))]
+    username: String,
+}
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct CreateRoomRequest {
@@ -48,6 +59,41 @@ struct SendMessageRequest {
 
 #[OpenApi]
 impl Api {
+    #[oai(path = "/session", method = "post")]
+    async fn login(
+        &self,
+        ctx: Data<&Context>,
+        request: Json<LoginRequest>,
+        session: &Session,
+    ) -> Result<()> {
+        session.set("username", request.username.clone());
+
+        ctx.bus
+            .dispatch_event(DomainEvent::UserLoggedIn {
+                username: request.username.clone(),
+            })
+            .await;
+
+        Ok(())
+    }
+
+    #[oai(path = "/session", method = "delete")]
+    async fn logout(&self, ctx: Data<&Context>, session: &Session) -> Result<()> {
+        let username = session.get::<String>("username");
+
+        if let Some(username) = username {
+            ctx.bus
+                .dispatch_event(DomainEvent::UserLoggedOut {
+                    username: username.clone(),
+                })
+                .await;
+
+            session.purge();
+        }
+
+        Ok(())
+    }
+
     #[oai(path = "/rooms", method = "post")]
     async fn create_room(
         &self,
@@ -145,7 +191,8 @@ pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::erro
     Ok(Route::new()
         .nest("/api", api_service)
         .nest("/", ui)
-        .data(ctx))
+        .data(ctx)
+        .with(CookieSession::new(CookieConfig::default().secure(true))))
 }
 
 #[tokio::main]
@@ -190,7 +237,10 @@ mod test {
 
     use super::create_app;
 
-    use poem::{http::header, test::TestClient};
+    use poem::{
+        http::header::{self, SET_COOKIE},
+        test::TestClient,
+    };
     use serde_json::json;
     use uuid::Uuid;
 
@@ -327,6 +377,64 @@ mod test {
                 DomainEvent::UserLeftRoom {
                     room_id,
                     username: "Karel".to_string(),
+                },
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn test_login() {
+        let bus = Arc::new(RecordingEventBus::default());
+        let app = create_app(Context { bus: bus.clone() }).await.unwrap();
+        let client = TestClient::new(app);
+
+        let body = json!({ "username": "Karel" });
+        let resp = client
+            .post("/api/session")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(body.to_string())
+            .send()
+            .await;
+
+        let cookie = resp
+            .0
+            .headers()
+            .get(SET_COOKIE)
+            .and_then(|value| value.to_str().ok())
+            .expect("Failed to get session cookie");
+
+        resp.assert_status_is_ok();
+
+        let recorded_events = bus.recorded_events().await;
+        assert_eq!(recorded_events.len(), 1);
+        assert_eq!(
+            recorded_events,
+            vec![DomainEvent::UserLoggedIn {
+                username: "Karel".to_string()
+            },]
+        );
+
+        let body = json!({ "username": "Karel" });
+        let resp = client
+            .delete("/api/session")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("Cookie", cookie)
+            .body(body.to_string())
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+
+        let recorded_events = bus.recorded_events().await;
+        assert_eq!(recorded_events.len(), 2);
+        assert_eq!(
+            recorded_events,
+            vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Karel".to_string()
+                },
+                DomainEvent::UserLoggedOut {
+                    username: "Karel".to_string()
                 },
             ]
         );

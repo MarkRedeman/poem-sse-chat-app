@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-poem = { version = "2.0.0", features = ["test", "sse"] }
+poem = { version = "2.0.0", features = ["test", "sse", "session"] }
 poem-openapi = { version = "4.0.0", features = ["swagger-ui", "email", "uuid", "websocket", "time"] }
 tokio = { version = "1.17.0", features = ["macros", "rt-multi-thread"] }
 tracing-subscriber = {version = "0.3.9", features = ["env-filter"] }
