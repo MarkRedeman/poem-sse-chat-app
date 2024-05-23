@@ -26,7 +26,7 @@ pub struct Api;
 
 struct AuthMiddleware;
 
-#[derive(Clone)]
+#[derive(Object, Clone)]
 struct AuthData {
     username: String,
 }
@@ -130,6 +130,13 @@ impl Api {
         session.purge();
 
         Ok(())
+    }
+
+    #[oai(path = "/session", method = "get", transform = "protect")]
+    async fn get_username(&self, auth_data: Data<&AuthData>) -> Result<Json<AuthData>> {
+        Ok(Json(AuthData {
+            username: auth_data.username.clone(),
+        }))
     }
 
     #[oai(path = "/rooms", method = "post", transform = "protect")]
@@ -483,6 +490,15 @@ mod test {
             .expect("Failed to get session cookie");
 
         resp.assert_status_is_ok();
+
+        let resp = client
+            .get("/api/session")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+        resp.assert_status_is_ok();
+        resp.assert_json(json!({"username": "Karel"})).await;
 
         let recorded_events = bus.recorded_events().await;
         assert_eq!(recorded_events.len(), 1);
