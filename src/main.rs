@@ -4,10 +4,12 @@ use std::sync::Arc;
 
 use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
 use poem::{
+    async_trait,
+    http::StatusCode,
     listener::TcpListener,
     session::{CookieConfig, CookieSession, Session},
     web::Data,
-    Endpoint, EndpointExt, Result, Route, Server,
+    Endpoint, EndpointExt, IntoResponse, Middleware, Request, Response, Result, Route, Server,
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
 use tokio::sync::broadcast;
@@ -22,6 +24,55 @@ struct Room {
 #[derive(Default)]
 pub struct Api;
 
+struct AuthMiddleware;
+
+#[derive(Clone)]
+struct AuthData {
+    username: String,
+}
+
+#[async_trait]
+impl<E: Endpoint> Middleware<E> for AuthMiddleware {
+    type Output = AuthMiddlewareEndpoint<E>;
+
+    fn transform(&self, ep: E) -> Self::Output {
+        AuthMiddlewareEndpoint { ep }
+    }
+}
+
+pub struct AuthMiddlewareEndpoint<E> {
+    ep: E,
+}
+
+#[async_trait]
+impl<E: Endpoint> Endpoint for AuthMiddlewareEndpoint<E> {
+    type Output = Response;
+
+    async fn call(&self, mut req: Request) -> Result<Self::Output> {
+        let session = req.extensions().get::<Session>().cloned().unwrap();
+        let username = session.get::<String>("username");
+
+        match username {
+            Some(username) => {
+                // Attach user information to the request extensions
+                req.extensions_mut().insert(AuthData { username });
+
+                return Ok(self.ep.call(req).await?.into_response());
+            }
+            None => {
+                // Return unauthorized if the session cookie is missing or invalid
+                Ok(Response::builder()
+                    .status(StatusCode::UNAUTHORIZED)
+                    .finish())
+            }
+        }
+    }
+}
+
+fn protect(ep: impl Endpoint) -> impl Endpoint {
+    ep.with(AuthMiddleware)
+}
+
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct LoginRequest {
     #[oai(validator(max_length = 256))]
@@ -33,26 +84,10 @@ struct CreateRoomRequest {
     id: Uuid,
     #[oai(validator(max_length = 256))]
     name: String,
-    #[oai(validator(max_length = 256))]
-    creator: String,
-}
-
-#[derive(Debug, Object, Clone, Eq, PartialEq)]
-struct JoinRoomRequest {
-    #[oai(validator(max_length = 256))]
-    username: String,
-}
-
-#[derive(Debug, Object, Clone, Eq, PartialEq)]
-struct LeaveRoomRequest {
-    #[oai(validator(max_length = 256))]
-    username: String,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct SendMessageRequest {
-    #[oai(validator(max_length = 256))]
-    username: String,
     #[oai(validator(max_length = 1024))]
     message: String,
 }
@@ -77,29 +112,35 @@ impl Api {
         Ok(())
     }
 
-    #[oai(path = "/session", method = "delete")]
-    async fn logout(&self, ctx: Data<&Context>, session: &Session) -> Result<()> {
-        let username = session.get::<String>("username");
+    #[oai(path = "/session", method = "delete", transform = "protect")]
+    async fn logout(
+        &self,
+        ctx: Data<&Context>,
+        session: &Session,
+        auth_data: Data<&AuthData>,
+    ) -> Result<()> {
+        let username = auth_data.username.clone();
 
-        if let Some(username) = username {
-            ctx.bus
-                .dispatch_event(DomainEvent::UserLoggedOut {
-                    username: username.clone(),
-                })
-                .await;
+        ctx.bus
+            .dispatch_event(DomainEvent::UserLoggedOut {
+                username: username.clone(),
+            })
+            .await;
 
-            session.purge();
-        }
+        session.purge();
 
         Ok(())
     }
 
-    #[oai(path = "/rooms", method = "post")]
+    #[oai(path = "/rooms", method = "post", transform = "protect")]
     async fn create_room(
         &self,
         ctx: Data<&Context>,
         request: Json<CreateRoomRequest>,
+        auth_data: Data<&AuthData>,
     ) -> Result<Json<Room>> {
+        let username = auth_data.username.clone();
+
         let room = Room {
             id: request.id,
             name: request.name.clone(),
@@ -115,41 +156,46 @@ impl Api {
         ctx.bus
             .dispatch_event(DomainEvent::UserJoinedRoom {
                 room_id: room.id,
-                username: request.creator.clone(),
+                username,
             })
             .await;
 
         Ok(Json(room))
     }
 
-    #[oai(path = "/rooms/:room_id/users", method = "post")]
+    #[oai(path = "/rooms/:room_id/users", method = "post", transform = "protect")]
     async fn join_room(
         &self,
         room_id: Path<Uuid>,
         ctx: Data<&Context>,
-        request: Json<JoinRoomRequest>,
+        auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
             .dispatch_event(DomainEvent::UserJoinedRoom {
                 room_id: room_id.0,
-                username: request.username.clone(),
+                username: auth_data.username.clone(),
             })
             .await;
 
         Ok(())
     }
 
-    #[oai(path = "/rooms/:room_id/messages", method = "post")]
+    #[oai(
+        path = "/rooms/:room_id/messages",
+        method = "post",
+        transform = "protect"
+    )]
     async fn send_message(
         &self,
         room_id: Path<Uuid>,
         ctx: Data<&Context>,
         request: Json<SendMessageRequest>,
+        auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
             .dispatch_event(DomainEvent::MessageWasSend {
                 room_id: room_id.0,
-                username: request.username.clone(),
+                username: auth_data.username.clone(),
                 message: request.message.clone(),
             })
             .await;
@@ -157,17 +203,21 @@ impl Api {
         Ok(())
     }
 
-    #[oai(path = "/rooms/:room_id/users", method = "delete")]
+    #[oai(
+        path = "/rooms/:room_id/users",
+        method = "delete",
+        transform = "protect"
+    )]
     async fn leave_room(
         &self,
         room_id: Path<Uuid>,
         ctx: Data<&Context>,
-        request: Json<LeaveRoomRequest>,
+        auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
             .dispatch_event(DomainEvent::UserLeftRoom {
                 room_id: room_id.0,
-                username: request.username.clone(),
+                username: auth_data.username.clone(),
             })
             .await;
 
@@ -268,7 +318,7 @@ mod test {
 
         // chat
         let room_id = Uuid::new_v4();
-        let body = json!({"id": room_id.to_string(), "name": "Lustrum Crash & Compile", "creator": "Francken"});
+        let body = json!({"id": room_id.to_string(), "name": "Lustrum Crash & Compile"});
         let resp = client
             .post("/api/rooms")
             .header(header::CONTENT_TYPE, "application/json")
@@ -293,17 +343,15 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Francken".to_string()
+                    username: "Karel".to_string()
                 },
             ]
         );
 
-        let body = json!({ "username": "Karel"});
         let resp = client
             .post(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie)
-            .body(body.to_string())
             .send()
             .await;
 
@@ -323,7 +371,7 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Francken".to_string()
+                    username: "Karel".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
@@ -332,7 +380,7 @@ mod test {
             ]
         );
 
-        let body = json!({ "username": "Karel", "message": "Hoi"});
+        let body = json!({  "message": "Hoi"});
         let resp = client
             .post(format!("/api/rooms/{}/messages", room_id))
             .header(header::CONTENT_TYPE, "application/json")
@@ -357,7 +405,7 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Francken".to_string()
+                    username: "Karel".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
@@ -371,12 +419,10 @@ mod test {
             ]
         );
 
-        let body = json!({ "username": "Karel" });
         let resp = client
             .delete(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie)
-            .body(body.to_string())
             .send()
             .await;
 
@@ -396,7 +442,7 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Francken".to_string()
+                    username: "Karel".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
@@ -444,15 +490,13 @@ mod test {
             recorded_events,
             vec![DomainEvent::UserLoggedIn {
                 username: "Karel".to_string()
-            },]
+            }]
         );
 
-        let body = json!({ "username": "Karel" });
         let resp = client
             .delete("/api/session")
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie)
-            .body(body.to_string())
             .send()
             .await;
 
