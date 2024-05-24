@@ -60,6 +60,7 @@ pub enum DomainEvent {
         username: String,
     },
     MessageWasSend {
+        id: Uuid,
         room_id: Uuid,
         username: String,
         message: String,

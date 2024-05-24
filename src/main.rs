@@ -39,6 +39,7 @@ struct CreateRoomRequest {
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct SendMessageRequest {
+    id: Uuid,
     #[oai(validator(max_length = 1024))]
     message: String,
 }
@@ -152,6 +153,7 @@ impl Api {
     ) -> Result<()> {
         ctx.bus
             .dispatch_event(DomainEvent::MessageWasSend {
+                id: request.id,
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
                 message: request.message.clone(),
@@ -338,7 +340,8 @@ mod test {
             ]
         );
 
-        let body = json!({  "message": "Hoi"});
+        let message_id = Uuid::new_v4();
+        let body = json!({  "message": "Hoi", "id": message_id});
         let resp = client
             .post(format!("/api/rooms/{}/messages", room_id))
             .header(header::CONTENT_TYPE, "application/json")
@@ -370,6 +373,7 @@ mod test {
                     username: "Karel".to_string()
                 },
                 DomainEvent::MessageWasSend {
+                    id: message_id,
                     room_id,
                     username: "Karel".to_string(),
                     message: "Hoi".to_string()
@@ -407,6 +411,7 @@ mod test {
                     username: "Karel".to_string()
                 },
                 DomainEvent::MessageWasSend {
+                    id: message_id,
                     room_id,
                     username: "Karel".to_string(),
                     message: "Hoi".to_string()
