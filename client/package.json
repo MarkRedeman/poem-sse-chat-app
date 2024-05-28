@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "build": "remix vite:build",
+    "build:schema": "npx openapi-typescript http://localhost:3000/spec.json -o ./app/api-schema.d.ts",
     "dev": "remix vite:dev",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "preview": "vite preview",
@@ -49,6 +50,7 @@
     "input-otp": "^1.2.4",
     "lucide-react": "^0.379.0",
     "next-themes": "^0.3.0",
+    "openapi-fetch": "^0.9.7",
     "react": "^18.2.0",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.2.0",

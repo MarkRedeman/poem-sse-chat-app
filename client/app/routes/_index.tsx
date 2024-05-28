@@ -8,6 +8,7 @@ import {
   redirect,
 } from "@remix-run/react";
 import { LoginForm, LogoutForm } from "~/components/login-form";
+import { client } from "~/api";
 
 export const clientLoader = async () => {
   const response = await fetch("http://localhost:3000/api/session", {
@@ -23,30 +24,16 @@ export const clientLoader = async () => {
 
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   if (request.method === "DELETE") {
-    await fetch("http://localhost:3000/api/session", {
-      method: "DELETE",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      credentials: "include",
-    });
+    await client.DELETE("/session");
 
     return redirect("/");
   }
 
   if (request.method === "POST") {
     const form = await request.formData();
-    const username = form.get("username");
+    const username = String(form.get("username"));
 
-    await fetch("http://localhost:3000/api/session", {
-      method: "POST",
-      body: JSON.stringify({ username }),
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      credentials: "include",
-    });
+    await client.POST("/session", { body: { username } });
 
     return redirect("/");
   }
