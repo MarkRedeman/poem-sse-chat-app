@@ -30,7 +30,8 @@ export function LoginForm() {
               name="username"
               type="text"
               required
-              minLength={2}
+              minLength={1}
+              maxLength={256}
             />
           </div>
         </CardContent>

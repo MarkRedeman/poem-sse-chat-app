@@ -1,7 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import {
   ClientActionFunctionArgs,
-  Outlet,
   isRouteErrorResponse,
   useLoaderData,
   useRouteError,
@@ -9,6 +8,8 @@ import {
 } from "@remix-run/react";
 import { LoginForm, LogoutForm } from "~/components/login-form";
 import { client } from "~/api";
+import { z } from "zod";
+import { zx } from "zodix";
 
 export const clientLoader = async () => {
   const response = await fetch("http://localhost:3000/api/session", {
@@ -22,6 +23,12 @@ export const clientLoader = async () => {
   return await response.json();
 };
 
+const FormSchema = z.object({
+  username: z.string().min(1, {
+    message: "Username must be at least 1 character.",
+  }),
+});
+
 export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   if (request.method === "DELETE") {
     await client.DELETE("/session");
@@ -30,10 +37,9 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   }
 
   if (request.method === "POST") {
-    const form = await request.formData();
-    const username = String(form.get("username"));
+    const body = await zx.parseForm(request, FormSchema);
 
-    await client.POST("/session", { body: { username } });
+    await client.POST("/session", { body });
 
     return redirect("/");
   }

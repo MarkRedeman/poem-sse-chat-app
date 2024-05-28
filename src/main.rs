@@ -27,21 +27,21 @@ pub struct Api;
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct LoginRequest {
-    #[oai(validator(max_length = 256, min_length = 2))]
+    #[oai(validator(max_length = 256, min_length = 1))]
     username: String,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct CreateRoomRequest {
     id: Uuid,
-    #[oai(validator(max_length = 256))]
+    #[oai(validator(max_length = 256, min_length = 1))]
     name: String,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct SendMessageRequest {
     id: Uuid,
-    #[oai(validator(max_length = 1024))]
+    #[oai(validator(max_length = 1024, min_length = 1))]
     message: String,
 }
 
