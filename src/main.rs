@@ -7,8 +7,9 @@ use auth::{protect, AuthData};
 use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
 use poem::{
     listener::TcpListener,
+    middleware::Cors,
     session::{CookieConfig, CookieSession, Session},
-    web::Data,
+    web::{cookie::SameSite, Data},
     Endpoint, EndpointExt, Result, Route, Server,
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
@@ -26,7 +27,7 @@ pub struct Api;
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct LoginRequest {
-    #[oai(validator(max_length = 256))]
+    #[oai(validator(max_length = 256, min_length = 2))]
     username: String,
 }
 
@@ -79,7 +80,7 @@ impl Api {
             })
             .await;
 
-        session.purge();
+        session.remove("username");
 
         Ok(())
     }
@@ -197,12 +198,15 @@ pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::erro
         .server("http://localhost:3000/api");
 
     let ui = api_service.swagger_ui();
+    let cors = Cors::new().allow_credentials(true);
+    let cookie_config = CookieConfig::default().same_site(SameSite::Strict);
 
     Ok(Route::new()
         .nest("/api", api_service)
         .nest("/", ui)
         .data(ctx)
-        .with(CookieSession::new(CookieConfig::default().secure(true))))
+        .with(CookieSession::new(cookie_config))
+        .with(cors))
 }
 
 #[tokio::main]
