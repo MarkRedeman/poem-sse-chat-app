@@ -198,12 +198,14 @@ pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::erro
         .server("http://localhost:3000/api");
 
     let ui = api_service.swagger_ui();
+    let spec = api_service.spec_endpoint();
     let cors = Cors::new().allow_credentials(true);
     let cookie_config = CookieConfig::default().same_site(SameSite::Strict);
 
     Ok(Route::new()
         .nest("/api", api_service)
         .nest("/", ui)
+        .nest("/spec.json", spec)
         .data(ctx)
         .with(CookieSession::new(cookie_config))
         .with(cors))
