@@ -12,6 +12,20 @@ export default defineConfig({
                 v3_relativeSplatPath: true,
                 v3_throwAbortReason: true,
             },
+            routes(defineRoutes) {
+                return defineRoutes((route) => {
+                    route("/", "routes/_index.tsx", () => {
+                        //route("login", "routes/login.tsx");
+                    });
+
+                    // route("/rooms", "routes/rooms/layout.tsx", () => {
+                    //     route("", "routes/rooms/route.tsx", { index: true });
+                    //     route(":room", "routes/rooms/room.tsx", {
+                    //         index: true,
+                    //     });
+                    // });
+                });
+            },
         }),
         tsconfigPaths(),
     ],
