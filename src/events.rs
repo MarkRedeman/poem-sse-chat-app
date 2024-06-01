@@ -13,6 +13,8 @@ use tokio::sync::broadcast::{Receiver, Sender};
 use tokio::{sync::Mutex, time::Duration};
 use uuid::Uuid;
 
+use crate::Context;
+
 #[derive(Debug, Object, Clone, Serialize, PartialEq)]
 pub struct MyEvent {
     value: i64,
@@ -184,8 +186,8 @@ pub struct Api;
 #[OpenApi]
 impl Api {
     #[oai(path = "/events", method = "get")]
-    async fn index(&self, bus: Data<&ShareableEventBus>) -> EventStream<BoxStream<'static, Value>> {
-        let mut rx = bus.subscribe().await.unwrap();
+    async fn index(&self, ctx: Data<&Context>) -> EventStream<BoxStream<'static, Value>> {
+        let mut rx = ctx.bus.subscribe().await.unwrap();
 
         EventStream::new(
             async_stream::stream! {
@@ -203,11 +205,8 @@ impl Api {
     // for admins, for the scoreboard etc
 
     #[oai(path = "/events/:room_id", method = "get")]
-    async fn index_my_event(
-        &self,
-        bus: Data<&ShareableEventBus>,
-    ) -> EventStream<BoxStream<'static, Value>> {
-        let mut rx = bus.subscribe().await.unwrap();
+    async fn index_my_event(&self, ctx: Data<&Context>) -> EventStream<BoxStream<'static, Value>> {
+        let mut rx = ctx.bus.subscribe().await.unwrap();
 
         EventStream::new(
             async_stream::stream! {
@@ -221,7 +220,7 @@ impl Api {
     }
 
     #[oai(path = "/generate-events", method = "get")]
-    async fn generate_events(&self, bus: Data<&ShareableEventBus>) -> Result<()> {
+    async fn generate_events(&self, ctx: Data<&Context>) -> Result<()> {
         for _ in 0..10 {
             let second = Duration::from_millis(1);
             tokio::time::sleep(second).await;
@@ -231,7 +230,7 @@ impl Api {
                 id: room_id,
                 name: String::from("Random room"),
             };
-            bus.dispatch_event(event.clone()).await;
+            ctx.bus.dispatch_event(event.clone()).await;
 
             tokio::time::sleep(second).await;
 
@@ -239,7 +238,7 @@ impl Api {
                 room_id,
                 username: "Francken".to_string(),
             };
-            bus.dispatch_event(event.clone()).await;
+            ctx.bus.dispatch_event(event.clone()).await;
         }
 
         Ok(())

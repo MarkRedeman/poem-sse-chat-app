@@ -1,25 +1,52 @@
 mod auth;
 mod events;
 
-use std::sync::Arc;
+use std::{collections::HashMap, sync::Arc};
 
 use auth::{protect, AuthData};
 use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
 use poem::{
+    http::StatusCode,
     listener::TcpListener,
     middleware::Cors,
     session::{CookieConfig, CookieSession, Session},
     web::{cookie::SameSite, Data},
-    Endpoint, EndpointExt, Result, Route, Server,
+    Endpoint, EndpointExt, Error, Result, Route, Server,
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
-use tokio::sync::broadcast;
+use serde::Serialize;
+use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
+
+#[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
+pub struct Message {
+    id: Uuid,
+    room_id: Uuid,
+    username: String,
+    message: String,
+}
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
 struct Room {
     id: Uuid,
     name: String,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct SingleRoom {
+    id: Uuid,
+    name: String,
+    joined: bool,
+    lastMessage: String,
+    unreadMessages: String,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct DetailedRoom {
+    id: Uuid,
+    name: String,
+    messages: Vec<Message>,
+    users: Vec<String>,
 }
 
 #[derive(Default)]
@@ -92,6 +119,53 @@ impl Api {
         }))
     }
 
+    #[oai(path = "/rooms", method = "get", transform = "protect")]
+    async fn get_rooms(&self, ctx: Data<&Context>) -> Result<Json<Vec<Room>>> {
+        let rooms = ctx.rooms.lock().await.clone();
+
+        Ok(Json(rooms))
+    }
+
+    #[oai(path = "/rooms/:room_id", method = "get", transform = "protect")]
+    async fn get_room(
+        &self,
+        ctx: Data<&Context>,
+        room_id: Path<Uuid>,
+    ) -> Result<Json<DetailedRoom>> {
+        let rooms = ctx.rooms.lock().await.clone();
+
+        let room = rooms.iter().find(|room| room.id == room_id.0);
+
+        match room {
+            None => Err(Error::from_status(StatusCode::NOT_FOUND)),
+            Some(room) => {
+                //let messages = ctx.messages_in_room.lock().await.get(&room.id);
+                let messages = ctx
+                    .messages_in_room
+                    .lock()
+                    .await
+                    .entry(room.id)
+                    .or_default()
+                    .clone();
+
+                let users = ctx
+                    .users_in_room
+                    .lock()
+                    .await
+                    .entry(room.id)
+                    .or_default()
+                    .clone();
+
+                Ok(Json(DetailedRoom {
+                    id: room.id,
+                    name: room.name.clone(),
+                    messages,
+                    users,
+                }))
+            }
+        }
+    }
+
     #[oai(path = "/rooms", method = "post", transform = "protect")]
     async fn create_room(
         &self,
@@ -120,6 +194,15 @@ impl Api {
             })
             .await;
 
+        ctx.rooms.lock().await.push(room.clone());
+
+        ctx.users_in_room
+            .lock()
+            .await
+            .entry(request.id)
+            .or_insert(Vec::new())
+            .push(request.name.clone());
+
         Ok(Json(room))
     }
 
@@ -136,6 +219,13 @@ impl Api {
                 username: auth_data.username.clone(),
             })
             .await;
+
+        ctx.users_in_room
+            .lock()
+            .await
+            .entry(room_id.0)
+            .or_insert(Vec::new())
+            .push(auth_data.username.clone());
 
         Ok(())
     }
@@ -160,6 +250,18 @@ impl Api {
                 message: request.message.clone(),
             })
             .await;
+
+        ctx.messages_in_room
+            .lock()
+            .await
+            .entry(room_id.0)
+            .or_insert(Vec::new())
+            .push(Message {
+                id: request.id,
+                room_id: room_id.0,
+                username: auth_data.username.clone(),
+                message: request.message.clone(),
+            });
 
         Ok(())
     }
@@ -189,6 +291,10 @@ impl Api {
 #[derive(Clone)]
 pub struct Context {
     bus: ShareableEventBus,
+
+    rooms: Arc<Mutex<Vec<Room>>>,
+    messages_in_room: Arc<Mutex<HashMap<Uuid, Vec<Message>>>>,
+    users_in_room: Arc<Mutex<HashMap<Uuid, Vec<String>>>>,
 }
 
 pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::error::Error>> {
@@ -220,7 +326,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (tx, _rx) = broadcast::channel::<DomainEvent>(32);
     let bus: ShareableEventBus = Arc::new(BroadcastingEventBus::from_broadcast(tx));
-    let ctx = Context { bus };
+    let ctx = Context {
+        bus,
+        messages_in_room: Arc::new(Mutex::new(HashMap::new())),
+        users_in_room: Arc::new(Mutex::new(HashMap::new())),
+        rooms: Arc::new(Mutex::new(Vec::new())),
+    };
 
     let app = create_app(ctx).await?.around(|ep, req| async move {
         let uri = req.uri().clone();
@@ -244,7 +355,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 #[cfg(test)]
 mod test {
-    use std::sync::Arc;
+    use std::{collections::HashMap, sync::Arc};
 
     use crate::{
         events::{DomainEvent, RecordingEventBus},
@@ -258,12 +369,20 @@ mod test {
         test::TestClient,
     };
     use serde_json::json;
+    use tokio::sync::Mutex;
     use uuid::Uuid;
 
     #[tokio::test]
     async fn test_chat_api() {
         let bus = Arc::new(RecordingEventBus::default());
-        let app = create_app(Context { bus: bus.clone() }).await.unwrap();
+        let app = create_app(Context {
+            bus: bus.clone(),
+            messages_in_room: Arc::new(Mutex::new(HashMap::new())),
+            users_in_room: Arc::new(Mutex::new(HashMap::new())),
+            rooms: Arc::new(Mutex::new(Vec::new())),
+        })
+        .await
+        .unwrap();
         let client = TestClient::new(app);
 
         // Login
@@ -433,7 +552,14 @@ mod test {
     #[tokio::test]
     async fn test_login() {
         let bus = Arc::new(RecordingEventBus::default());
-        let app = create_app(Context { bus: bus.clone() }).await.unwrap();
+        let app = create_app(Context {
+            bus: bus.clone(),
+            messages_in_room: Arc::new(Mutex::new(HashMap::new())),
+            users_in_room: Arc::new(Mutex::new(HashMap::new())),
+            rooms: Arc::new(Mutex::new(Vec::new())),
+        })
+        .await
+        .unwrap();
         let client = TestClient::new(app);
 
         let body = json!({ "username": "Karel" });

@@ -10,24 +10,29 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { useFetcher } from "@remix-run/react";
+import { v4 as uuid } from "uuid";
 
-export function LoginForm() {
+export function JoinRoomForm() {
   const fetcher = useFetcher();
+  const id = uuid();
 
   return (
-    <fetcher.Form method="POST" action="/">
-      <Card className="w-full max-w-sm">
+    <fetcher.Form method="POST" action="/rooms">
+      <input type="hidden" name="id" value={id} />
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Choose your username</CardDescription>
+          <CardTitle className="text-2xl">Join Room</CardTitle>
+          <CardDescription>
+            Create a new room or join a room from the list above
+          </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="username">Username</Label>
+            <Label htmlFor="name">Room name</Label>
             <Input
-              defaultValue={"Mark"}
-              id="username"
-              name="username"
+              defaultValue={"S[ck]rip(t|t?c)ie In[ck]"}
+              id="name"
+              name="name"
               type="text"
               required
               minLength={1}
@@ -36,7 +41,9 @@ export function LoginForm() {
           </div>
         </CardContent>
         <CardFooter>
-          <Button className="w-full">Sign in</Button>
+          <Button type="submit" className="w-full">
+            Create & join room
+          </Button>
         </CardFooter>
       </Card>
     </fetcher.Form>
