@@ -15,8 +15,8 @@ export function RoomLink({ room, idx }: { room: Room; idx: number }) {
              isActive
                ? "bg-green-300 p-8"
                : idx % 2 === 0
-               ? "bg-zinc-100"
-               : "bg-zinc-50"
+                 ? "bg-zinc-100"
+                 : "bg-zinc-50"
            }`;
         }}
         unstable_viewTransition
@@ -40,8 +40,8 @@ export function RoomLink({ room, idx }: { room: Room; idx: number }) {
                   room.unreadMessages > 0
                     ? "text-bold text-green-900"
                     : isActive
-                    ? "text-green-700"
-                    : "text-slate-500"
+                      ? "text-green-700"
+                      : "text-slate-500"
                 }`}
               >
                 {text}
