@@ -1,7 +1,6 @@
 import type { MetaFunction } from "@remix-run/node";
 import {
   ClientActionFunctionArgs,
-  useLoaderData,
   redirect,
   json,
   Outlet,
@@ -19,6 +18,7 @@ import { Room, rooms } from "~/lib/rooms";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";
+import { useLiveLoader } from "~/lib/use-live-loader";
 
 const FormSchema = z.object({
   name: z.string().min(1, {
@@ -79,7 +79,9 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const { username, rooms } = useLoaderData<typeof clientLoader>();
+  const { username, rooms } = useLiveLoader<typeof clientLoader>(
+    "http://localhost:3000/api/events"
+  );
 
   return (
     <div className="w-full h-screen grid grid-cols-[400px_1fr] ">
