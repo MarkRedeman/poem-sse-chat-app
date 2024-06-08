@@ -5,10 +5,12 @@ import {
   json,
   Outlet,
   ClientLoaderFunctionArgs,
+  useRouteLoaderData,
+  useParams,
+  useLoaderData,
 } from "@remix-run/react";
 import { CornerDownLeft, Mic, Paperclip } from "lucide-react";
 import { client } from "~/api";
-
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -19,6 +21,8 @@ import {
 } from "~/components/ui/tooltip";
 import { Room } from "~/lib/rooms";
 import { useLiveLoader } from "~/lib/use-live-loader";
+import { clientLoader as roomsClientLoader } from "./rooms";
+import { useEffect } from "react";
 
 export function ChatForm() {
   return (
@@ -94,11 +98,27 @@ export const meta: MetaFunction<typeof clientLoader> = ({ data }) => {
   return [{ title: `${room.name} - Room` }];
 };
 
+function useJoinRoom() {
+  const { room: room_id } = useParams<{ room: string }>();
+  const { username } =
+    useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
+  const { room } = useLoaderData<typeof clientLoader>();
+
+  useEffect(() => {
+    if (room.users.includes(username) || room_id === undefined) {
+      return;
+    }
+
+    client.POST("/rooms/{room_id}/users", { params: { path: { room_id } } });
+  }, []);
+}
+
 export default function Index() {
   const data = useLiveLoader<typeof clientLoader>(
     "http://localhost:3000/api/events"
   );
   const room = data.room;
+  useJoinRoom();
 
   return (
     <div className="flex flex-col gap-8 justify-between p-4 overflow-y-auto">
@@ -106,10 +126,9 @@ export default function Index() {
         <h2>{room.name}</h2>
         <span className="text-xs">
           <ul className="flex gap-2">
-            <li>Mark,</li>
-            <li>Sven,</li>
-            <li>Paulus,</li>
-            <li>Sjieuwe</li>
+            {room.users.map((user, idx) => {
+              return <li key={idx}>{user}</li>;
+            })}
           </ul>
         </span>
       </header>
