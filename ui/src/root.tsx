@@ -1,4 +1,3 @@
-import styles from "./globals.css?url";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { EventSourceProvider } from "./lib/use-event-source";
 import { useEffect, useRef } from "react";
@@ -12,14 +11,12 @@ import {
   QueryClient,
   QueryClientProvider,
 } from "@tanstack/react-query";
-import { NavLink, Outlet, isRouteErrorResponse, useRouteError } from "react-router-dom";
-
-const eventSourceMap = new Map<
-  string,
-  { count: number; source: EventSource }
->();
-
-const queryClient = new QueryClient();
+import {
+  NavLink,
+  Outlet,
+  isRouteErrorResponse,
+  useRouteError,
+} from "react-router-dom";
 
 function useDb() {
   const dbRef = useRef<IDBPDatabase<MyDB>>();
@@ -44,20 +41,17 @@ function useDb() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const db = useDb();
-    console.log(db)
+  console.log(db);
 
   return (
-        <QueryClientProvider client={queryClient}>
-          {/* The rest of your application */}
-          <ReactQueryDevtools
-            initialIsOpen={false}
-            buttonPosition="bottom-left"
-          />
+    <QueryClientProvider client={queryClient}>
+      {/* The rest of your application */}
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
 
-          <EventSourceProvider value={eventSourceMap}>
-            <TooltipProvider>{children}</TooltipProvider>
-          </EventSourceProvider>
-        </QueryClientProvider>
+      <EventSourceProvider value={eventSourceMap}>
+        <TooltipProvider>{children}</TooltipProvider>
+      </EventSourceProvider>
+    </QueryClientProvider>
   );
 }
 
