@@ -187,21 +187,21 @@ impl Api {
             })
             .await;
 
+        ctx.rooms.lock().await.push(room.clone());
+
         ctx.bus
             .dispatch_event(DomainEvent::UserJoinedRoom {
                 room_id: room.id,
-                username,
+                username: username.clone(),
             })
             .await;
-
-        ctx.rooms.lock().await.push(room.clone());
 
         ctx.users_in_room
             .lock()
             .await
             .entry(request.id)
             .or_insert(Vec::new())
-            .push(request.name.clone());
+            .push(username.clone());
 
         Ok(Json(room))
     }
@@ -213,19 +213,21 @@ impl Api {
         ctx: Data<&Context>,
         auth_data: Data<&AuthData>,
     ) -> Result<()> {
-        ctx.bus
-            .dispatch_event(DomainEvent::UserJoinedRoom {
-                room_id: room_id.0,
-                username: auth_data.username.clone(),
-            })
-            .await;
+        let username = auth_data.username.clone();
 
-        ctx.users_in_room
-            .lock()
-            .await
-            .entry(room_id.0)
-            .or_insert(Vec::new())
-            .push(auth_data.username.clone());
+        let mut users_in_room = ctx.users_in_room.lock().await;
+        let users = users_in_room.entry(room_id.0).or_insert(Vec::new());
+
+        if !users.contains(&username) {
+            users.push(auth_data.username.clone());
+
+            ctx.bus
+                .dispatch_event(DomainEvent::UserJoinedRoom {
+                    room_id: room_id.0,
+                    username: auth_data.username.clone(),
+                })
+                .await;
+        }
 
         Ok(())
     }
@@ -385,8 +387,24 @@ mod test {
         .unwrap();
         let client = TestClient::new(app);
 
-        // Login
-        let body = json!({ "username": "Karel" });
+        // Login as Jane Doe
+        let body = json!({ "username": "Jane" });
+        let resp = client
+            .post("/api/session")
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(body.to_string())
+            .send()
+            .await;
+
+        let cookie_jane = resp
+            .0
+            .headers()
+            .get(SET_COOKIE)
+            .and_then(|value| value.to_str().ok())
+            .expect("Failed to get session cookie");
+
+        // Login as John Doe
+        let body = json!({ "username": "John" });
         let resp = client
             .post("/api/session")
             .header(header::CONTENT_TYPE, "application/json")
@@ -415,12 +433,15 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 3);
+        assert_eq!(recorded_events.len(), 4);
         assert_eq!(
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn {
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
+                },
+                DomainEvent::UserLoggedIn {
+                    username: "John".to_string()
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
@@ -428,7 +449,7 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
             ]
         );
@@ -436,19 +457,22 @@ mod test {
         let resp = client
             .post(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
-            .header(header::COOKIE, cookie)
+            .header(header::COOKIE, cookie_jane)
             .send()
             .await;
 
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 4);
+        assert_eq!(recorded_events.len(), 5);
         assert_eq!(
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn {
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
+                },
+                DomainEvent::UserLoggedIn {
+                    username: "John".to_string()
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
@@ -456,11 +480,47 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
+                },
+            ]
+        );
+
+        // Joining the room again as Jane, should not produce events
+        let resp = client
+            .post(format!("/api/rooms/{}/users", room_id))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie_jane)
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+
+        let recorded_events = bus.recorded_events().await;
+        assert_eq!(recorded_events.len(), 5);
+        assert_eq!(
+            recorded_events,
+            vec![
+                DomainEvent::UserLoggedIn {
+                    username: "Jane".to_string()
+                },
+                DomainEvent::UserLoggedIn {
+                    username: "John".to_string()
+                },
+                DomainEvent::RoomWasCreated {
+                    id: room_id,
+                    name: "Lustrum Crash & Compile".to_string()
+                },
+                DomainEvent::UserJoinedRoom {
+                    room_id,
+                    username: "John".to_string()
+                },
+                DomainEvent::UserJoinedRoom {
+                    room_id,
+                    username: "Jane".to_string()
                 },
             ]
         );
@@ -478,12 +538,15 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 5);
+        assert_eq!(recorded_events.len(), 6);
         assert_eq!(
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn {
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
+                },
+                DomainEvent::UserLoggedIn {
+                    username: "John".to_string()
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
@@ -491,16 +554,16 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
                 },
                 DomainEvent::MessageWasSend {
                     id: message_id,
                     room_id,
-                    username: "Karel".to_string(),
+                    username: "John".to_string(),
                     message: "Hoi".to_string()
                 },
             ]
@@ -516,12 +579,15 @@ mod test {
         resp.assert_status_is_ok();
 
         let recorded_events = bus.recorded_events().await;
-        assert_eq!(recorded_events.len(), 6);
+        assert_eq!(recorded_events.len(), 7);
         assert_eq!(
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn {
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
+                },
+                DomainEvent::UserLoggedIn {
+                    username: "John".to_string()
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
@@ -529,21 +595,21 @@ mod test {
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Karel".to_string()
+                    username: "Jane".to_string()
                 },
                 DomainEvent::MessageWasSend {
                     id: message_id,
                     room_id,
-                    username: "Karel".to_string(),
+                    username: "John".to_string(),
                     message: "Hoi".to_string()
                 },
                 DomainEvent::UserLeftRoom {
                     room_id,
-                    username: "Karel".to_string(),
+                    username: "John".to_string(),
                 },
             ]
         );
@@ -562,7 +628,7 @@ mod test {
         .unwrap();
         let client = TestClient::new(app);
 
-        let body = json!({ "username": "Karel" });
+        let body = json!({ "username": "John" });
         let resp = client
             .post("/api/session")
             .header(header::CONTENT_TYPE, "application/json")
@@ -586,14 +652,14 @@ mod test {
             .send()
             .await;
         resp.assert_status_is_ok();
-        resp.assert_json(json!({"username": "Karel"})).await;
+        resp.assert_json(json!({"username": "John"})).await;
 
         let recorded_events = bus.recorded_events().await;
         assert_eq!(recorded_events.len(), 1);
         assert_eq!(
             recorded_events,
             vec![DomainEvent::UserLoggedIn {
-                username: "Karel".to_string()
+                username: "John".to_string()
             }]
         );
 
@@ -612,10 +678,10 @@ mod test {
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn {
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
                 DomainEvent::UserLoggedOut {
-                    username: "Karel".to_string()
+                    username: "John".to_string()
                 },
             ]
         );
