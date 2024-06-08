@@ -1,4 +1,6 @@
 import { v4 as uuid } from "uuid";
+import { queryOptions } from "@tanstack/react-query";
+import { client } from "~/api";
 
 export type Room = {
     id: string;
@@ -26,3 +28,31 @@ export const rooms: Room[] = [...new Array(25)].map((_, idx) => {
         },
     };
 });
+
+export const roomsQueryOptions = () => {
+    return queryOptions({
+        queryKey: ["rooms"],
+        queryFn: async () => {
+            const response = await client.GET("/rooms");
+
+            if (response === undefined) {
+                throw new Response("Not found", { status: 404 });
+            }
+
+            return response.data;
+        },
+    });
+};
+
+export const roomQueryOptions = (roomId: string) => {
+    return queryOptions({
+        queryKey: ["rooms", roomId],
+        queryFn: async () => {
+            const response = await client.GET("/rooms/{room_id}", {
+                params: { path: { room_id: roomId } },
+            });
+
+            return response.data;
+        },
+    });
+};
