@@ -5,10 +5,6 @@ import {
   redirect,
   json,
   Outlet,
-  useRouteLoaderData,
-  useMatches,
-  useRevalidator,
-  useLocation,
 } from "@remix-run/react";
 import { client } from "~/api";
 import { z } from "zod";
@@ -23,7 +19,6 @@ import { Room, rooms } from "~/lib/rooms";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";
-import { useEffect } from "react";
 
 const FormSchema = z.object({
   name: z.string().min(1, {
@@ -84,9 +79,7 @@ export const meta: MetaFunction = () => {
 };
 
 export default function Index() {
-  const data = useLoaderData<typeof clientLoader>();
-  const username = data?.username ?? "Mark";
-  const rooms = data.rooms;
+  const { username, rooms } = useLoaderData<typeof clientLoader>();
 
   return (
     <div className="w-full h-screen grid grid-cols-[400px_1fr] ">
