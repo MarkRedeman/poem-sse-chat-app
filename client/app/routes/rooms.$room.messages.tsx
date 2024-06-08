@@ -1,22 +1,13 @@
-import type { MetaFunction } from "@remix-run/node";
 import {
   Form,
   ClientActionFunctionArgs,
-  useLoaderData,
-  redirect,
   json,
-  NavLink,
-  Outlet,
   useRouteLoaderData,
-  useFetcher,
-  useLocation,
-  useParams,
-  useMatches,
   useSubmit,
   useNavigation,
   useActionData,
 } from "@remix-run/react";
-import { CornerDownLeft, Mic, Paperclip } from "lucide-react";
+import { CornerDownLeft } from "lucide-react";
 import { z } from "zod";
 import { zx } from "zodix";
 import { client } from "~/api";
@@ -30,7 +21,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { rooms } from "~/lib/rooms";
 import { clientLoader as roomsClientLoader } from "./rooms";
 import { clientLoader as roomClientLoader } from "./rooms.$room";
 import { KeyboardEventHandler, useEffect, useRef } from "react";
@@ -112,27 +102,10 @@ function ChatForm() {
         placeholder="Type your message here..."
         className="min-h-12 resize-none border-0 p-3 shadow-none focus-visible:ring-0"
         maxLength={1024}
+        minLength={1}
         onKeyDown={handleKeyDown}
       />
       <div className="flex items-center p-3 pt-0">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Paperclip className="size-4" />
-              <span className="sr-only">Attach file</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">Attach File</TooltipContent>
-        </Tooltip>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Mic className="size-4" />
-              <span className="sr-only">Use Microphone</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="top">Use Microphone</TooltipContent>
-        </Tooltip>
         <Button type="submit" size="sm" className="ml-auto gap-1.5">
           Send Message
           <CornerDownLeft className="size-3.5" />
@@ -148,9 +121,6 @@ export default function Messages() {
     useRouteLoaderData<typeof roomClientLoader>("routes/rooms.$room")!;
   const username = data.username;
 
-  console.log(roomData);
-  //const messages = roomData
-
   const messages = roomData.room.messages.map((message) => {
     return {
       username: message.username,
@@ -158,10 +128,6 @@ export default function Messages() {
       date: new Date(),
     };
   });
-
-  /* [...new Array(250)].forEach((_, idx) => {
-   *   messages.push({ username, message: "Hoi", date: new Date() });
-   * }); */
 
   return (
     <>

@@ -85,13 +85,8 @@ export const meta: MetaFunction = () => {
 
 export default function Index() {
   const data = useLoaderData<typeof clientLoader>();
-  const user = useRouteLoaderData("routes/rooms");
-  const matches = useMatches();
-
   const username = data?.username ?? "Mark";
   const rooms = data.rooms;
-
-  console.log({ data, user, matches });
 
   return (
     <div className="w-full h-screen grid grid-cols-[400px_1fr] ">

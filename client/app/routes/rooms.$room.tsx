@@ -1,13 +1,10 @@
 import type { MetaFunction } from "@remix-run/node";
 import {
   ClientActionFunctionArgs,
-  useLoaderData,
   redirect,
   json,
-  NavLink,
   Outlet,
   ClientLoaderFunctionArgs,
-  useRouteError,
 } from "@remix-run/react";
 import { CornerDownLeft, Mic, Paperclip } from "lucide-react";
 import { client } from "~/api";
@@ -20,7 +17,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Room, rooms } from "~/lib/rooms";
+import { Room } from "~/lib/rooms";
+import { useLiveLoader } from "~/lib/use-live-loader";
 
 export function ChatForm() {
   return (
@@ -73,8 +71,6 @@ export const clientLoader = async ({ params }: ClientLoaderFunctionArgs) => {
 
   const room = response.data;
 
-  // await new Promise((resolve) => setTimeout(resolve, 3000));
-
   if (room === undefined) {
     throw new Response("Not Found", { status: 404 });
   }
@@ -99,7 +95,9 @@ export const meta: MetaFunction<typeof clientLoader> = ({ data }) => {
 };
 
 export default function Index() {
-  const data = useLoaderData<typeof clientLoader>();
+  const data = useLiveLoader<typeof clientLoader>(
+    "http://localhost:3000/api/events"
+  );
   const room = data.room;
 
   return (

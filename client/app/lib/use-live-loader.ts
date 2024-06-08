@@ -3,24 +3,26 @@ import { useEventSource } from "./use-event-source";
 import { useEffect, useRef } from "react";
 
 export function useLiveLoader<T>(
-    dataResolver?: (revalidate: () => void) => void
+  eventSourceUrl: string,
+  dataResolver?: (revalidate: () => void) => void
 ) {
-    const eventName = useLocation().pathname;
-    const data = useEventSource(`/events/${eventName}`);
-    const { revalidate } = useRevalidator();
+  //const eventName = useLocation().pathname;
+  const data = useEventSource(eventSourceUrl);
+  console.log("Event source", data, JSON.parse(data));
+  const { revalidate } = useRevalidator();
 
-    const resolver = useRef(dataResolver);
-    useEffect(() => {
-        resolver.current = dataResolver;
-    }, [dataResolver]);
+  const resolver = useRef(dataResolver);
+  useEffect(() => {
+    resolver.current = dataResolver;
+  }, [dataResolver]);
 
-    useEffect(() => {
-        if (resolver.current) {
-            resolver.current(revalidate);
-        } else {
-            revalidate();
-        }
-    }, [data, revalidate]);
+  useEffect(() => {
+    if (resolver.current) {
+      resolver.current(revalidate);
+    } else {
+      revalidate();
+    }
+  }, [data, revalidate]);
 
-    return useLoaderData<T>();
+  return useLoaderData<T>();
 }

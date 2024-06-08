@@ -11,6 +11,12 @@ import {
 import styles from "./globals.css?url";
 import { LinksFunction } from "@remix-run/node";
 import { TooltipProvider } from "./components/ui/tooltip";
+import { EventSourceProvider } from "./lib/use-event-source";
+
+const eventSourceMap = new Map<
+  string,
+  { count: number; source: EventSource }
+>();
 
 export const links: LinksFunction = () => [{ rel: "stylesheet", href: styles }];
 
@@ -25,7 +31,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <link href="./globals.css" />
       </head>
       <body>
-        <TooltipProvider>{children}</TooltipProvider>
+        <EventSourceProvider value={eventSourceMap}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </EventSourceProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
