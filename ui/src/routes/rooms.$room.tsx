@@ -1,16 +1,15 @@
-import type { MetaFunction } from "@remix-run/node";
 import {
-  ClientActionFunctionArgs,
   redirect,
   json,
   Outlet,
-  ClientLoaderFunctionArgs,
   useRouteLoaderData,
   useParams,
   useLoaderData,
-} from "@remix-run/react";
+  LoaderFunctionArgs,
+  ActionFunctionArgs,
+} from "react-router-dom";
 import { CornerDownLeft, Mic, Paperclip } from "lucide-react";
-import { client } from "~/api";
+import { client } from "~/api/client";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
@@ -21,7 +20,7 @@ import {
 } from "~/components/ui/tooltip";
 import { Room } from "~/lib/rooms";
 import { useLiveLoader } from "~/lib/use-live-loader";
-import { clientLoader as roomsClientLoader } from "./rooms";
+import { loader as roomsClientLoader } from "./rooms";
 import { useEffect } from "react";
 
 export function ChatForm() {
@@ -64,13 +63,13 @@ export function ChatForm() {
   );
 }
 
-export const clientLoader = async ({ params }: ClientLoaderFunctionArgs) => {
-  if (params.room === undefined) {
+export const loader = async ({ params }: LoaderFunctionArgs) => {
+  if (params.roomId === undefined) {
     throw new Response("Not Found", { status: 404 });
   }
 
   const response = await client.GET("/rooms/{room_id}", {
-    params: { path: { room_id: params.room } },
+    params: { path: { room_id: params.roomId } },
   });
 
   const room = response.data;
@@ -82,7 +81,7 @@ export const clientLoader = async ({ params }: ClientLoaderFunctionArgs) => {
   return json({ room });
 };
 
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method === "POST") {
     //await client.POST("/session");
 
@@ -102,6 +101,7 @@ function useJoinRoom() {
   const { room: room_id } = useParams<{ room: string }>();
   const { username } =
     useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
+
   const { room } = useLoaderData<typeof clientLoader>();
 
   useEffect(() => {
@@ -113,10 +113,8 @@ function useJoinRoom() {
   }, []);
 }
 
-export default function Index() {
-  const data = useLiveLoader<typeof clientLoader>(
-    "http://localhost:3000/api/events"
-  );
+export function Component() {
+  const data = useLiveLoader<typeof loader>("http://localhost:3000/api/events");
   const room = data.room;
   useJoinRoom();
 

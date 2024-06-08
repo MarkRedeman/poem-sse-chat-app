@@ -1,17 +1,16 @@
-import type { MetaFunction } from "@remix-run/node";
 import {
-  ClientActionFunctionArgs,
+  ActionFunctionArgs,
   isRouteErrorResponse,
   useRouteError,
   redirect,
   NavLink,
-} from "@remix-run/react";
+} from "react-router-dom";
 import { LoginForm, LogoutForm } from "~/components/login-form";
-import { client } from "~/api";
+import { client } from "~/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
-export const clientLoader = async () => {
+export const loader = async () => {
   const response = await client.GET("/session");
 
   if (response.response.status === 401) {
@@ -31,7 +30,7 @@ const FormSchema = z.object({
   }),
 });
 
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method === "DELETE") {
     await client.DELETE("/session");
 
@@ -47,13 +46,6 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
   }
 
   throw new Response("Not found", { status: 404 });
-};
-
-export const meta: MetaFunction = () => {
-  return [
-    { title: "New Remix SPA" },
-    { name: "description", content: "Welcome to Remix (SPA Mode)!" },
-  ];
 };
 
 export function ErrorBoundary() {
@@ -98,7 +90,7 @@ export function ErrorBoundary() {
   }
 }
 
-export default function Index() {
+export default function Component() {
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center gap-4">
       <h1>Logged in</h1>

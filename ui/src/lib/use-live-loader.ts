@@ -1,4 +1,4 @@
-import { useLoaderData, useRevalidator } from "@remix-run/react";
+import { useLoaderData, useRevalidator } from "react-router-dom";
 import { useEventSource } from "./use-event-source";
 import { useEffect, useRef } from "react";
 

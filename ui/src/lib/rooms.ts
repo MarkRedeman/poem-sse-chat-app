@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 import { queryOptions } from "@tanstack/react-query";
-import { client } from "~/api";
+import { client } from "~/api/client";
 
 export type Room = {
   id: string;

@@ -1,4 +1,4 @@
-import { NavLink } from "@remix-run/react";
+import { NavLink } from "react-router-dom";
 import { Room } from "~/lib/rooms";
 
 export function RoomLink({ room, idx }: { room: Room; idx: number }) {

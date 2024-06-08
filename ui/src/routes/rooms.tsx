@@ -1,11 +1,5 @@
-import type { MetaFunction } from "@remix-run/node";
-import {
-  ClientActionFunctionArgs,
-  redirect,
-  json,
-  Outlet,
-} from "@remix-run/react";
-import { client } from "~/api";
+import { ActionFunctionArgs, redirect, json, Outlet } from "react-router-dom";
+import { client } from "~/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
@@ -27,7 +21,7 @@ const FormSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method === "POST") {
     const { id, name } = await zx.parseForm(request, FormSchema);
 
@@ -42,13 +36,14 @@ export const clientAction = async ({ request }: ClientActionFunctionArgs) => {
       unreadMessages: 0,
     });
 
+    console.log("REDIRECTING?", { id }, `/rooms/${id}/messages`);
     return redirect(`/rooms/${id}/messages`);
   }
 
   throw new Response("Not found", { status: 404 });
 };
 
-export const clientLoader = async () => {
+export const loader = async () => {
   const sessionResponse = await client.GET("/session");
 
   if (sessionResponse.data === undefined) {
@@ -74,12 +69,8 @@ export const clientLoader = async () => {
   });
 };
 
-export const meta: MetaFunction = () => {
-  return [{ title: "Rooms" }, { name: "description", content: "Chat" }];
-};
-
-export default function Index() {
-  const { username, rooms } = useLiveLoader<typeof clientLoader>(
+export function Component() {
+  const { username, rooms } = useLiveLoader<typeof loader>(
     "http://localhost:3000/api/events"
   );
 

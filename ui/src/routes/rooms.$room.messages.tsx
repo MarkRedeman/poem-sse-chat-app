@@ -1,16 +1,16 @@
 import {
   Form,
-  ClientActionFunctionArgs,
   json,
   useRouteLoaderData,
   useSubmit,
   useNavigation,
   useActionData,
-} from "@remix-run/react";
+  ActionFunctionArgs,
+} from "react-router-dom";
 import { CornerDownLeft } from "lucide-react";
 import { z } from "zod";
 import { zx } from "zodix";
-import { client } from "~/api";
+import { client } from "~/api/client";
 import { v4 as uuid } from "uuid";
 
 import { Button } from "~/components/ui/button";
@@ -21,8 +21,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { clientLoader as roomsClientLoader } from "./rooms";
-import { clientLoader as roomClientLoader } from "./rooms.$room";
+import { loader as roomsClientLoader } from "./rooms";
+import { loader as roomClientLoader } from "./rooms.$room";
 import { KeyboardEventHandler, useEffect, useRef } from "react";
 
 const FormSchema = z.object({
@@ -32,13 +32,10 @@ const FormSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const clientAction = async ({
-  request,
-  params,
-}: ClientActionFunctionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
   if (request.method === "POST") {
     const body = await zx.parseForm(request, FormSchema);
-    const room_id = params.room;
+    const room_id = params.roomId;
 
     if (room_id === undefined) {
       throw new Response("Not found", { status: 404 });
@@ -60,7 +57,7 @@ function ChatForm() {
   let $form = useRef<HTMLFormElement>(null);
 
   let navigation = useNavigation();
-  let actionData = useActionData<typeof clientAction>();
+  let actionData = useActionData<typeof action>();
 
   useEffect(
     function resetFormOnSuccess() {
@@ -115,7 +112,7 @@ function ChatForm() {
   );
 }
 
-export default function Messages() {
+export function Component() {
   const data = useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
   const roomData =
     useRouteLoaderData<typeof roomClientLoader>("routes/rooms.$room")!;

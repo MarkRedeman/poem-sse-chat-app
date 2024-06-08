@@ -28,7 +28,7 @@ function useDb() {
       const storeF = db.transaction(storeName).objectStore(storeName);
 
       //db.transaction(storeNames)
-      console.log(storeF);
+      // console.log(storeF);
 
       dbRef.current = db;
     }
@@ -41,7 +41,7 @@ function useDb() {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const db = useDb();
-  console.log(db);
+  // console.log(db);
 
   return (
     <QueryClientProvider client={queryClient}>
