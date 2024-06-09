@@ -21,8 +21,7 @@ export function RoomLink({ room, idx }: { room: Room; idx: number }) {
         }}
         unstable_viewTransition
       >
-        {({ isActive, isPending, isTransitioning }) => (
-          // TODO: add isPending state for when loading messages would be slow
+        {({ isActive }) => (
           <>
             <div
               className={`flex flex-col ${

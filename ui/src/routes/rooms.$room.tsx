@@ -2,9 +2,7 @@ import {
   redirect,
   json,
   Outlet,
-  useRouteLoaderData,
   useParams,
-  useLoaderData,
   LoaderFunctionArgs,
   ActionFunctionArgs,
 } from "react-router-dom";
@@ -22,6 +20,7 @@ import { Room } from "~/lib/rooms";
 import { useLiveLoader } from "~/lib/use-live-loader";
 import { loader as roomsClientLoader } from "./rooms";
 import { useEffect } from "react";
+import { useLoaderData, useRouteLoaderData } from "~/lib/use-loader-data";
 
 export function ChatForm() {
   return (
@@ -93,26 +92,18 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   throw new Response("Not found", { status: 404 });
 };
 
-export const meta: MetaFunction<typeof clientLoader> = ({ data }) => {
-  const room = data.room as Room;
-
-  return [{ title: `${room.name} - Room` }];
-};
-
 function useJoinRoom() {
   const { roomId } = useParams<{ roomId: string }>();
   const { username } =
     useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
 
-  const { room } = useLoaderData<typeof clientLoader>();
+  const { room } = useLoaderData<typeof loader>();
 
   useEffect(() => {
-    console.log("should we join?", { room, username });
     if (room.users.includes(username) || roomId === undefined) {
       return;
     }
 
-    console.log("joining?");
     client.POST("/rooms/{room_id}/users", {
       params: { path: { room_id: roomId } },
     });

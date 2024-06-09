@@ -1,6 +1,7 @@
-import { useLoaderData, useRevalidator } from "react-router-dom";
+import { useRevalidator } from "react-router-dom";
 import { useEventSource } from "./use-event-source";
 import { useEffect, useRef } from "react";
+import { useLoaderData } from "./use-loader-data";
 
 export function useLiveLoader<T>(
   eventSourceUrl: string,
