@@ -1,33 +1,33 @@
 import {
   Outlet,
   useParams,
-  LoaderFunctionArgs,
   ActionFunctionArgs,
   useFetcher,
+  LoaderFunction,
 } from "react-router-dom";
-import { client } from "~/lib/api/client";
 import { useLiveLoader } from "~/lib/use-live-loader";
-import { loader as roomsClientLoader } from "./layout";
 import { useEffect } from "react";
-import { useRouteLoaderData } from "~/lib/use-loader-data";
 import { json, redirect } from "@remix-run/react";
+import { AppContext } from "~/router";
+import { roomQueryOptions } from "~/lib/rooms";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { sessionQueryOptions } from "~/lib/session";
 
-export const loader = async ({ params }: LoaderFunctionArgs) => {
-  if (params.roomId === undefined) {
-    throw new Response("Not Found", { status: 404 });
-  }
+export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
+  return async ({ params }) => {
+    const roomId = params.roomId;
+    if (roomId === undefined) {
+      throw new Response("Not Found", { status: 404 });
+    }
 
-  const response = await client.GET("/rooms/{room_id}", {
-    params: { path: { room_id: params.roomId } },
-  });
+    const room = await queryClient.ensureQueryData(roomQueryOptions(roomId));
 
-  const room = response.data;
+    if (room === undefined) {
+      throw new Response("Not Found", { status: 404 });
+    }
 
-  if (room === undefined) {
-    throw new Response("Not Found", { status: 404 });
-  }
-
-  return json({ room });
+    return json({ room });
+  };
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -53,11 +53,13 @@ function JoinRoom({ roomId }: { roomId: string }) {
 }
 
 export function Component() {
-  const data = useLiveLoader<typeof loader>("http://localhost:3000/api/events");
-  const room = data.room;
-  const { username } =
-    useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
+  useLiveLoader("http://localhost:3000/api/events");
+
   const { roomId } = useParams<{ roomId: string }>();
+  const roomQuery = useSuspenseQuery(roomQueryOptions(roomId!));
+  const room = roomQuery.data;
+  const sessionQuery = useSuspenseQuery(sessionQueryOptions());
+  const username = sessionQuery.data.username;
 
   return (
     <div className="flex flex-col gap-8 justify-between p-4 overflow-y-auto">

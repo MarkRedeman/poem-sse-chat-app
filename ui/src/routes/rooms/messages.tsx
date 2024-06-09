@@ -1,12 +1,13 @@
-import { ActionFunctionArgs } from "react-router-dom";
+import { ActionFunctionArgs, useParams } from "react-router-dom";
 import { z } from "zod";
 import { zx } from "zodix";
 import { client } from "~/lib/api/client";
 
-import { buildLoader as roomsClientLoader } from "./layout";
-import { loader as roomClientLoader } from "./room";
-import { useRouteLoaderData } from "~/lib/use-loader-data";
 import { ChatForm } from "~/components/chat-form";
+import { json } from "@remix-run/react";
+import { roomQueryOptions } from "~/lib/rooms";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { sessionQueryOptions } from "~/lib/session";
 
 const FormSchema = z.object({
   message: z.string().min(1, {
@@ -35,19 +36,18 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export function Component() {
-  const data =
-    useRouteLoaderData<ReturnType<typeof roomsClientLoader>>("routes/rooms")!;
-  const roomData =
-    useRouteLoaderData<typeof roomClientLoader>("routes/rooms.$room")!;
-  const username = data.username;
-
-  const messages = roomData.room.messages.map((message) => {
+  const { roomId } = useParams<{ roomId: string }>();
+  const roomQuery = useSuspenseQuery(roomQueryOptions(roomId!));
+  const messages = roomQuery.data.messages.map((message) => {
     return {
       username: message.username,
       message: message.message,
       date: new Date(),
     };
   });
+
+  const sessionQuery = useSuspenseQuery(sessionQueryOptions());
+  const username = sessionQuery.data.username;
 
   return (
     <>

@@ -11,6 +11,7 @@ import { useLiveLoader } from "~/lib/use-live-loader";
 import { json, redirect } from "@remix-run/react";
 import { AppContext } from "~/router";
 import { sessionQueryOptions } from "~/lib/session";
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 const FormSchema = z.object({
   name: z.string().min(1, {
@@ -43,20 +44,23 @@ export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
 };
 
 export function Component() {
-  const { username, rooms } = useLiveLoader<ReturnType<typeof buildLoader>>(
+  const roomsQuery = useSuspenseQuery(roomsQueryOptions());
+  const sessionQuery = useSuspenseQuery(sessionQueryOptions());
+
+  useLiveLoader<ReturnType<typeof buildLoader>>(
     "http://localhost:3000/api/events"
   );
 
   return (
     <div className="w-full h-screen grid grid-cols-[400px_1fr] ">
       <aside className="bg-zinc-200 py-8 px-4 flex flex-col gap-4 overflow-y-auto">
-        <Header username={username} />
+        <Header username={sessionQuery.data.username} />
         <div className="flex justify-between items-center">
           <h1 className="text-4xl my-4 mb-6 text-slate-800">Rooms</h1>
           <CreateRoomButton />
         </div>
 
-        <RoomLinks rooms={rooms} />
+        <RoomLinks rooms={roomsQuery.data} />
       </aside>
 
       <Outlet />

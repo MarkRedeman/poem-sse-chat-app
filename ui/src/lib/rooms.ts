@@ -61,6 +61,10 @@ export const roomQueryOptions = (roomId: string) => {
         params: { path: { room_id: roomId } },
       });
 
+      if (response.data === undefined) {
+        throw new Response("Not found", { status: 404 });
+      }
+
       return response.data;
     },
   });

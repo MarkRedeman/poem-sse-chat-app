@@ -12,6 +12,7 @@ import {
   useRouteError,
 } from "react-router-dom";
 import { lazy } from "./router";
+import React from "react";
 
 function ErrorBoundary() {
   const error = useRouteError();
@@ -104,9 +105,8 @@ function Providers({ children }: { children?: ReactNode }) {
 const container = document.getElementById("root")!;
 const root = createRoot(container); // createRoot(container!) if you use TypeScript
 
-root.render(<Providers />);
-/* root.render(
- *   <React.StrictMode >
- *     <Providers />
- *   </React.StrictMode>
- * ); */
+root.render(
+  <React.StrictMode>
+    <Providers />
+  </React.StrictMode>
+);
