@@ -78,6 +78,10 @@ function Providers({ children }: { children?: ReactNode }) {
               path: "messages",
               lazy: lazy(import("~/routes/rooms/messages"), { queryClient }),
             },
+            {
+              path: "users",
+              lazy: lazy(import("~/routes/rooms/users"), { queryClient }),
+            },
           ],
         },
       ],

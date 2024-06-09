@@ -91,7 +91,7 @@ export function ErrorBoundary() {
   }
 }
 
-export default function Component() {
+export function Component() {
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center gap-4">
       <h1>Logged in</h1>
