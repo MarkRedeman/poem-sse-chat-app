@@ -11,10 +11,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       throw new Response("Not found", { status: 404 });
     }
 
+    const now = new Date();
     await client.POST("/rooms/{room_id}/users", {
       params: { path: { room_id: roomId } },
       body: {
-        joined_at: "2024-06-09T12:00:00Z",
+        joined_at: now.toISOString(),
       },
     });
 

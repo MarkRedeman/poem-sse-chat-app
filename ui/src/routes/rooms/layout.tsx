@@ -30,13 +30,10 @@ export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
     if (request.method === "POST") {
       const { id, name } = await zx.parseForm(request, FormSchema);
 
-      console.log("creating a room?");
-
+      const now = new Date();
       await client.POST("/rooms", {
-        body: { id, name, created_at: "2024-06-09T12:00:00Z" },
+        body: { id, name, created_at: now.toISOString() },
       });
-
-      console.log("doen creating room now redirecting");
 
       return redirect(`/rooms/${id}/messages`);
     }
