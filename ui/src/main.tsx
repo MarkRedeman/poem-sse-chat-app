@@ -11,10 +11,10 @@ import {
   RouterProvider,
   useRouteError,
 } from "react-router-dom";
+import { lazy } from "./router";
 
 function ErrorBoundary() {
   const error = useRouteError();
-  console.log("there is an error", { error });
 
   if (isRouteErrorResponse(error)) {
     return (
@@ -55,28 +55,28 @@ function Providers({ children }: { children?: ReactNode }) {
   const router = createBrowserRouter([
     {
       path: "/",
-      lazy: () => import("~/routes/_index"),
+      lazy: lazy(import("~/routes/_index"), { queryClient }),
     },
     {
       path: "/rooms",
       id: "routes/rooms",
       ErrorBoundary,
-      lazy: () => import("~/routes/rooms/layout"),
+      lazy: lazy(import("~/routes/rooms/layout"), { queryClient }),
       children: [
         {
           index: true,
           ErrorBoundary,
-          lazy: () => import("~/routes/rooms/index"),
+          lazy: lazy(import("~/routes/rooms/index"), { queryClient }),
         },
         {
           path: ":roomId",
           id: "routes/rooms.$room",
           ErrorBoundary,
-          lazy: () => import("~/routes/rooms/room"),
+          lazy: lazy(import("~/routes/rooms/room"), { queryClient }),
           children: [
             {
               path: "messages",
-              lazy: () => import("~/routes/rooms/messages"),
+              lazy: lazy(import("~/routes/rooms/messages"), { queryClient }),
             },
           ],
         },

@@ -1,5 +1,6 @@
 import {
   ActionFunctionArgs,
+  LoaderFunction,
   isRouteErrorResponse,
   useRouteError,
   redirect,
@@ -9,19 +10,20 @@ import { LoginForm, LogoutForm } from "~/components/login-form";
 import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
+import { sessionQueryOptions } from "~/lib/session";
+import { AppContext } from "~/router";
 
-export const loader = async () => {
-  const response = await client.GET("/session");
+export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
+  return async () => {
+    const query = sessionQueryOptions();
+    const response = await queryClient.ensureQueryData(query);
 
-  if (response.response.status === 401) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
+    if (response.data) {
+      return redirect("/rooms");
+    }
 
-  if (response.data) {
-    return redirect("/rooms");
-  }
-
-  return response.data;
+    return response.data;
+  };
 };
 
 const FormSchema = z.object({
