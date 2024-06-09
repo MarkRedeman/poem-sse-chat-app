@@ -62,16 +62,24 @@ function ChatForm() {
     [navigation.state, actionData]
   );
 
-  const handleKeyDown: KeyboardEventHandler = (event) => {
-    if (event.key === "Enter" && (event.shiftKey || event.ctrlKey)) {
-      event.preventDefault();
-      // Get the form element
-      const form = event.target.form as HTMLFormElement;
+  const handleKeyDown: KeyboardEventHandler<HTMLTextAreaElement> = (event) => {
+    const pressedSubmit =
+      event.key === "Enter" && (event.shiftKey || event.ctrlKey);
 
-      // Use Remix's useSubmit to submit the form programmatically
-      submit(form);
-      form.reset();
+    if (!pressedSubmit) {
+      return;
     }
+
+    event.preventDefault();
+    const form = event.currentTarget.form;
+
+    if (!form) {
+      return;
+    }
+
+    // Submit and clear the form
+    submit(form);
+    form.reset();
   };
 
   return (
@@ -79,9 +87,6 @@ function ChatForm() {
       ref={$form}
       method="POST"
       className="relative overflow-hidden rounded-lg border bg-background focus-within:ring-1 focus-within:ring-ring"
-      onSubmitCapture={(event) => {
-        //event.currentTarget.reset();
-      }}
     >
       <input type="hidden" name="id" value={id} />
       <Label htmlFor="message" className="sr-only">
