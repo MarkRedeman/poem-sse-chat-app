@@ -35,11 +35,20 @@ export const roomsQueryOptions = () => {
     queryFn: async () => {
       const response = await client.GET("/rooms");
 
-      if (response === undefined) {
+      if (response.data === undefined) {
         throw new Response("Not found", { status: 404 });
       }
 
-      return response.data;
+      const rooms = response.data;
+      return rooms.map((room): Room => {
+        return {
+          id: room.id,
+          name: room.name,
+          joined: true,
+          lastMessage: { content: "hoi", date: new Date().getTime() },
+          unreadMessages: 0,
+        };
+      });
     },
   });
 };

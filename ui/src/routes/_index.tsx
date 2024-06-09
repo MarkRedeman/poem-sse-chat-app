@@ -18,11 +18,11 @@ export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
     const query = sessionQueryOptions();
     const response = await queryClient.ensureQueryData(query);
 
-    if (response.data) {
+    if (response) {
       return redirect("/rooms");
     }
 
-    return response.data;
+    return response;
   };
 };
 

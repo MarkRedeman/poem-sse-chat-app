@@ -1,14 +1,16 @@
-import { ActionFunctionArgs, Outlet } from "react-router-dom";
+import { ActionFunctionArgs, LoaderFunction, Outlet } from "react-router-dom";
 import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
-import { Room } from "~/lib/rooms";
+import { roomsQueryOptions } from "~/lib/rooms";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";
 import { useLiveLoader } from "~/lib/use-live-loader";
 import { json, redirect } from "@remix-run/react";
+import { AppContext } from "~/router";
+import { sessionQueryOptions } from "~/lib/session";
 
 const FormSchema = z.object({
   name: z.string().min(1, {
@@ -29,34 +31,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   throw new Response("Not found", { status: 404 });
 };
 
-export const loader = async () => {
-  const sessionResponse = await client.GET("/session");
+export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
+  return async () => {
+    const [session, rooms] = await Promise.all([
+      queryClient.ensureQueryData(sessionQueryOptions()),
+      queryClient.ensureQueryData(roomsQueryOptions()),
+    ]);
 
-  if (sessionResponse.data === undefined) {
-    return redirect("/");
-  }
-
-  const roomsResponse = await client.GET("/rooms");
-  if (roomsResponse.error) {
-    throw new Response("Not Found", { status: 404 });
-  }
-
-  return json({
-    rooms: roomsResponse.data.map((room): Room => {
-      return {
-        id: room.id,
-        name: room.name,
-        joined: true,
-        lastMessage: { content: "hoi", date: new Date().getTime() },
-        unreadMessages: 0,
-      };
-    }),
-    username: sessionResponse.data.username,
-  });
+    return json({ rooms, username: session.username });
+  };
 };
 
 export function Component() {
-  const { username, rooms } = useLiveLoader<typeof loader>(
+  const { username, rooms } = useLiveLoader<ReturnType<typeof buildLoader>>(
     "http://localhost:3000/api/events"
   );
 
