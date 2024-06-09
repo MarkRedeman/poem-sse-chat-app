@@ -15,6 +15,7 @@ use poem::{
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
 use serde::Serialize;
+use time::OffsetDateTime;
 use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
@@ -24,6 +25,7 @@ pub struct Message {
     room_id: Uuid,
     username: String,
     message: String,
+    send_at: OffsetDateTime,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
@@ -63,6 +65,7 @@ struct CreateRoomRequest {
     id: Uuid,
     #[oai(validator(max_length = 256, min_length = 1))]
     name: String,
+    created_at: OffsetDateTime,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
@@ -70,6 +73,17 @@ struct SendMessageRequest {
     id: Uuid,
     #[oai(validator(max_length = 1024, min_length = 1))]
     message: String,
+    send_at: OffsetDateTime,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct JoinRoomRequest {
+    joined_at: OffsetDateTime,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct LeaveRoomRequest {
+    left_at: OffsetDateTime,
 }
 
 #[OpenApi]
@@ -184,6 +198,7 @@ impl Api {
             .dispatch_event(DomainEvent::RoomWasCreated {
                 id: room.id,
                 name: room.name.clone(),
+                created_at: request.created_at,
             })
             .await;
 
@@ -193,6 +208,7 @@ impl Api {
             .dispatch_event(DomainEvent::UserJoinedRoom {
                 room_id: room.id,
                 username: username.clone(),
+                joined_at: request.created_at,
             })
             .await;
 
@@ -210,6 +226,7 @@ impl Api {
     async fn join_room(
         &self,
         room_id: Path<Uuid>,
+        request: Json<JoinRoomRequest>,
         ctx: Data<&Context>,
         auth_data: Data<&AuthData>,
     ) -> Result<()> {
@@ -225,6 +242,7 @@ impl Api {
                 .dispatch_event(DomainEvent::UserJoinedRoom {
                     room_id: room_id.0,
                     username: auth_data.username.clone(),
+                    joined_at: request.joined_at,
                 })
                 .await;
         }
@@ -250,6 +268,7 @@ impl Api {
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
                 message: request.message.clone(),
+                send_at: request.send_at,
             })
             .await;
 
@@ -263,6 +282,7 @@ impl Api {
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
                 message: request.message.clone(),
+                send_at: request.send_at,
             });
 
         Ok(())
@@ -277,12 +297,14 @@ impl Api {
         &self,
         room_id: Path<Uuid>,
         ctx: Data<&Context>,
+        request: Json<LeaveRoomRequest>,
         auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
             .dispatch_event(DomainEvent::UserLeftRoom {
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
+                left_at: request.left_at,
             })
             .await;
 
@@ -371,6 +393,7 @@ mod test {
         test::TestClient,
     };
     use serde_json::json;
+    use time::{format_description::well_known::Rfc3339, OffsetDateTime};
     use tokio::sync::Mutex;
     use uuid::Uuid;
 
@@ -421,7 +444,11 @@ mod test {
 
         // chat
         let room_id = Uuid::new_v4();
-        let body = json!({"id": room_id.to_string(), "name": "Lustrum Crash & Compile"});
+        let body = json!({
+            "id": room_id.to_string(),
+            "name": "Lustrum Crash & Compile",
+            "created_at": "2024-06-09T12:00:00Z"
+        });
         let resp = client
             .post("/api/rooms")
             .header(header::CONTENT_TYPE, "application/json")
@@ -431,6 +458,8 @@ mod test {
             .await;
 
         resp.assert_status_is_ok();
+        let now = OffsetDateTime::parse("2024-06-09T12:00:00Z", &Rfc3339)
+            .expect("Failed to parse date string");
 
         let recorded_events = bus.recorded_events().await;
         assert_eq!(recorded_events.len(), 4);
@@ -445,11 +474,13 @@ mod test {
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
-                    name: "Lustrum Crash & Compile".to_string()
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "John".to_string()
+                    username: "John".to_string(),
+                    joined_at: now,
                 },
             ]
         );
@@ -458,6 +489,12 @@ mod test {
             .post(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie_jane)
+            .body(
+                json!({
+                "joined_at": "2024-06-09T12:00:00Z"
+                })
+                .to_string(),
+            )
             .send()
             .await;
 
@@ -476,15 +513,18 @@ mod test {
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
-                    name: "Lustrum Crash & Compile".to_string()
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "John".to_string()
+                    username: "John".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Jane".to_string()
+                    username: "Jane".to_string(),
+                    joined_at: now,
                 },
             ]
         );
@@ -494,6 +534,12 @@ mod test {
             .post(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie_jane)
+            .body(
+                json!({
+                "joined_at": "2024-06-09T12:00:00Z"
+                })
+                .to_string(),
+            )
             .send()
             .await;
 
@@ -512,21 +558,28 @@ mod test {
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
-                    name: "Lustrum Crash & Compile".to_string()
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "John".to_string()
+                    username: "John".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Jane".to_string()
+                    username: "Jane".to_string(),
+                    joined_at: now,
                 },
             ]
         );
 
         let message_id = Uuid::new_v4();
-        let body = json!({  "message": "Hoi", "id": message_id});
+        let body = json!({
+            "message": "Hoi",
+            "id": message_id,
+            "send_at": "2024-06-09T12:00:00Z"
+        });
         let resp = client
             .post(format!("/api/rooms/{}/messages", room_id))
             .header(header::CONTENT_TYPE, "application/json")
@@ -550,21 +603,25 @@ mod test {
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
-                    name: "Lustrum Crash & Compile".to_string()
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "John".to_string()
+                    username: "John".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Jane".to_string()
+                    username: "Jane".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::MessageWasSend {
                     id: message_id,
                     room_id,
                     username: "John".to_string(),
-                    message: "Hoi".to_string()
+                    message: "Hoi".to_string(),
+                    send_at: now,
                 },
             ]
         );
@@ -573,6 +630,12 @@ mod test {
             .delete(format!("/api/rooms/{}/users", room_id))
             .header(header::CONTENT_TYPE, "application/json")
             .header(header::COOKIE, cookie)
+            .body(
+                json!({
+                "left_at": "2024-06-09T12:00:00Z"
+                })
+                .to_string(),
+            )
             .send()
             .await;
 
@@ -591,25 +654,30 @@ mod test {
                 },
                 DomainEvent::RoomWasCreated {
                     id: room_id,
-                    name: "Lustrum Crash & Compile".to_string()
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "John".to_string()
+                    username: "John".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::UserJoinedRoom {
                     room_id,
-                    username: "Jane".to_string()
+                    username: "Jane".to_string(),
+                    joined_at: now,
                 },
                 DomainEvent::MessageWasSend {
                     id: message_id,
                     room_id,
                     username: "John".to_string(),
-                    message: "Hoi".to_string()
+                    message: "Hoi".to_string(),
+                    send_at: now,
                 },
                 DomainEvent::UserLeftRoom {
                     room_id,
                     username: "John".to_string(),
+                    left_at: now,
                 },
             ]
         );

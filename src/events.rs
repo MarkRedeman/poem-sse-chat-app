@@ -52,20 +52,24 @@ pub enum DomainEvent {
     RoomWasCreated {
         id: Uuid,
         name: String,
+        created_at: OffsetDateTime,
     },
     UserJoinedRoom {
         room_id: Uuid,
         username: String,
+        joined_at: OffsetDateTime,
     },
     UserLeftRoom {
         room_id: Uuid,
         username: String,
+        left_at: OffsetDateTime,
     },
     MessageWasSend {
         id: Uuid,
         room_id: Uuid,
         username: String,
         message: String,
+        send_at: OffsetDateTime,
     },
 }
 
@@ -225,10 +229,12 @@ impl Api {
             let second = Duration::from_millis(1);
             tokio::time::sleep(second).await;
 
+            let now = OffsetDateTime::now_utc();
             let room_id = Uuid::new_v4();
             let event = DomainEvent::RoomWasCreated {
                 id: room_id,
                 name: String::from("Random room"),
+                created_at: now,
             };
             ctx.bus.dispatch_event(event.clone()).await;
 
@@ -237,6 +243,7 @@ impl Api {
             let event = DomainEvent::UserJoinedRoom {
                 room_id,
                 username: "Francken".to_string(),
+                joined_at: now,
             };
             ctx.bus.dispatch_event(event.clone()).await;
         }
