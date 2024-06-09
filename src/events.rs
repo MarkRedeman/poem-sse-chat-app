@@ -40,8 +40,8 @@ pub struct Position {
     y: u32,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Serialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub enum DomainEvent {
     UserLoggedIn {
         username: String,
