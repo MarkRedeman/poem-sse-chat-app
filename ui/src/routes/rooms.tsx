@@ -1,5 +1,5 @@
 import { ActionFunctionArgs, Outlet } from "react-router-dom";
-import { client } from "~/api/client";
+import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 

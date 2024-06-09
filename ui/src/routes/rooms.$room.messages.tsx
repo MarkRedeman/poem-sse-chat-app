@@ -7,7 +7,7 @@ import {
 import { CornerDownLeft } from "lucide-react";
 import { z } from "zod";
 import { zx } from "zodix";
-import { client } from "~/api/client";
+import { client } from "~/lib/api/client";
 import { v4 as uuid } from "uuid";
 
 import { Button } from "~/components/ui/button";

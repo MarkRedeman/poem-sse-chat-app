@@ -4,7 +4,7 @@ import {
   LoaderFunctionArgs,
   ActionFunctionArgs,
 } from "react-router-dom";
-import { client } from "~/api/client";
+import { client } from "~/lib/api/client";
 import { useLiveLoader } from "~/lib/use-live-loader";
 import { loader as roomsClientLoader } from "./rooms";
 import { useEffect } from "react";

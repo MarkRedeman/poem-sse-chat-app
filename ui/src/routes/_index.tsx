@@ -6,7 +6,7 @@ import {
   NavLink,
 } from "react-router-dom";
 import { LoginForm, LogoutForm } from "~/components/login-form";
-import { client } from "~/api/client";
+import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
