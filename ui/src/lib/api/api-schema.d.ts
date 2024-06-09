@@ -40,7 +40,7 @@ export interface paths {
       responses: {
         200: {
           content: {
-            "application/json; charset=utf-8": components["schemas"]["Room"][];
+            "application/json; charset=utf-8": components["schemas"]["IndexRoom"][];
           };
         };
       };
@@ -184,6 +184,13 @@ export interface components {
       name: string;
       messages: components["schemas"]["Message"][];
       users: string[];
+    };
+    IndexRoom: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      joined: boolean;
+      last_message?: components["schemas"]["Message"];
     };
     JoinRoomRequest: {
       /** Format: date-time */

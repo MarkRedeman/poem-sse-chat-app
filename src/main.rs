@@ -35,12 +35,11 @@ struct Room {
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
-struct SingleRoom {
+struct IndexRoom {
     id: Uuid,
     name: String,
     joined: bool,
-    lastMessage: String,
-    unreadMessages: String,
+    last_message: Option<Message>,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
@@ -134,8 +133,28 @@ impl Api {
     }
 
     #[oai(path = "/rooms", method = "get", transform = "protect")]
-    async fn get_rooms(&self, ctx: Data<&Context>) -> Result<Json<Vec<Room>>> {
+    async fn get_rooms(&self, ctx: Data<&Context>) -> Result<Json<Vec<IndexRoom>>> {
         let rooms = ctx.rooms.lock().await.clone();
+        let messages_lock = ctx.messages_in_room.lock().await;
+
+        let rooms = rooms
+            .iter()
+            .map(|room| {
+                let messages = messages_lock.get(&room.id);
+
+                let last_message = match messages {
+                    Some(messages) => messages.last(),
+                    None => None,
+                };
+
+                IndexRoom {
+                    id: room.id,
+                    joined: true,
+                    name: room.name.clone(),
+                    last_message: last_message.cloned(),
+                }
+            })
+            .collect();
 
         Ok(Json(rooms))
     }
