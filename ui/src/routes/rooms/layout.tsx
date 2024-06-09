@@ -1,4 +1,9 @@
-import { ActionFunctionArgs, LoaderFunction, Outlet } from "react-router-dom";
+import {
+  ActionFunction,
+  ActionFunctionArgs,
+  LoaderFunction,
+  Outlet,
+} from "react-router-dom";
 import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
@@ -20,16 +25,24 @@ const FormSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "POST") {
-    const { id, name } = await zx.parseForm(request, FormSchema);
+export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
+  return async ({ request }: ActionFunctionArgs) => {
+    if (request.method === "POST") {
+      const { id, name } = await zx.parseForm(request, FormSchema);
 
-    await client.POST("/rooms", { body: { id, name } });
+      console.log("creating a room?");
 
-    return redirect(`/rooms/${id}/messages`);
-  }
+      await client.POST("/rooms", {
+        body: { id, name, created_at: "2024-06-09T12:00:00Z" },
+      });
 
-  throw new Response("Not found", { status: 404 });
+      console.log("doen creating room now redirecting");
+
+      return redirect(`/rooms/${id}/messages`);
+    }
+
+    throw new Response("Not found", { status: 404 });
+  };
 };
 
 export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {

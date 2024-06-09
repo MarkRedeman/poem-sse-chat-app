@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "build:schema": "npx openapi-typescript http://localhost:3000/spec.json -o ./src/api/api-schema.d.ts",
+    "build:schema": "npx openapi-typescript http://localhost:3000/spec.json -o ./src/lib/api/api-schema.d.ts",
     "format": "prettier --write src/",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0 --fix",

@@ -13,6 +13,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     await client.POST("/rooms/{room_id}/users", {
       params: { path: { room_id: roomId } },
+      body: {
+        joined_at: "2024-06-09T12:00:00Z",
+      },
     });
 
     return json({ ok: true });

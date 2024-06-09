@@ -3,6 +3,7 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
   "/session": {
     get: {
@@ -82,6 +83,11 @@ export interface paths {
           room_id: string;
         };
       };
+      requestBody: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["JoinRoomRequest"];
+        };
+      };
       responses: {
         200: {
           content: never;
@@ -92,6 +98,11 @@ export interface paths {
       parameters: {
         path: {
           room_id: string;
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["LeaveRoomRequest"];
         };
       };
       responses: {
@@ -164,6 +175,8 @@ export interface components {
       /** Format: uuid */
       id: string;
       name: string;
+      /** Format: date-time */
+      created_at: string;
     };
     DetailedRoom: {
       /** Format: uuid */
@@ -171,6 +184,14 @@ export interface components {
       name: string;
       messages: components["schemas"]["Message"][];
       users: string[];
+    };
+    JoinRoomRequest: {
+      /** Format: date-time */
+      joined_at: string;
+    };
+    LeaveRoomRequest: {
+      /** Format: date-time */
+      left_at: string;
     };
     LoginRequest: {
       username: string;
@@ -182,6 +203,8 @@ export interface components {
       room_id: string;
       username: string;
       message: string;
+      /** Format: date-time */
+      send_at: string;
     };
     Room: {
       /** Format: uuid */
@@ -192,6 +215,8 @@ export interface components {
       /** Format: uuid */
       id: string;
       message: string;
+      /** Format: date-time */
+      send_at: string;
     };
   };
   responses: never;
