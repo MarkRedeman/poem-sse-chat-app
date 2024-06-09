@@ -50,7 +50,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export function ErrorBoundary() {
   const error = useRouteError();
-  console.log("there is an error", { error });
 
   if (isRouteErrorResponse(error)) {
     if (error.status === 401) {
