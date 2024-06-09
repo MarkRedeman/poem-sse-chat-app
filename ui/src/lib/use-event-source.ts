@@ -26,13 +26,13 @@ export function useEventSource(
   url: string | URL,
   { event = "message", init }: EventSourceOptions = {}
 ) {
-  let map = useContext(context);
-  let [data, setData] = useState<string | null>(null);
+  const map = useContext(context);
+  const [data, setData] = useState<string | null>(null);
 
   useEffect(() => {
-    let key = [url.toString(), init?.withCredentials].join("::");
+    const key = [url.toString(), init?.withCredentials].join("::");
 
-    let value = map.get(key) ?? {
+    const value = map.get(key) ?? {
       count: 0,
       source: new EventSource(url, init),
     };

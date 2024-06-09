@@ -68,9 +68,11 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
+  console.log("getting room?", { params });
   const response = await client.GET("/rooms/{room_id}", {
     params: { path: { room_id: params.roomId } },
   });
+  console.log("got room?", { params, response });
 
   const room = response.data;
 
@@ -98,19 +100,23 @@ export const meta: MetaFunction<typeof clientLoader> = ({ data }) => {
 };
 
 function useJoinRoom() {
-  const { room: room_id } = useParams<{ room: string }>();
+  const { roomId } = useParams<{ roomId: string }>();
   const { username } =
     useRouteLoaderData<typeof roomsClientLoader>("routes/rooms")!;
 
   const { room } = useLoaderData<typeof clientLoader>();
 
   useEffect(() => {
-    if (room.users.includes(username) || room_id === undefined) {
+    console.log("should we join?", { room, username });
+    if (room.users.includes(username) || roomId === undefined) {
       return;
     }
 
-    client.POST("/rooms/{room_id}/users", { params: { path: { room_id } } });
-  }, []);
+    console.log("joining?");
+    client.POST("/rooms/{room_id}/users", {
+      params: { path: { room_id: roomId } },
+    });
+  }, [room, username]);
 }
 
 export function Component() {

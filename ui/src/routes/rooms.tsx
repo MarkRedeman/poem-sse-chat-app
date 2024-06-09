@@ -28,15 +28,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     await client.POST("/rooms", { body: { id, name } });
 
     // TMP loal state
-    rooms.push({
-      id,
-      name,
-      joined: true,
-      lastMessage: { content: "No message", date: new Date().getTime() },
-      unreadMessages: 0,
-    });
+    /* rooms.push({
+     *   id,
+     *   name,
+     *   joined: true,
+     *   lastMessage: { content: "No message", date: new Date().getTime() },
+     *   unreadMessages: 0,
+     * }); */
 
     console.log("REDIRECTING?", { id }, `/rooms/${id}/messages`);
+
     return redirect(`/rooms/${id}/messages`);
   }
 

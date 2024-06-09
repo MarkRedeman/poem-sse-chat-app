@@ -54,10 +54,10 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 function ChatForm() {
   const id = uuid();
   const submit = useSubmit();
-  let $form = useRef<HTMLFormElement>(null);
+  const $form = useRef<HTMLFormElement>(null);
 
-  let navigation = useNavigation();
-  let actionData = useActionData<typeof action>();
+  const navigation = useNavigation();
+  const actionData = useActionData<typeof action>();
 
   useEffect(
     function resetFormOnSuccess() {
