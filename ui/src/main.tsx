@@ -57,26 +57,24 @@ function Providers({ children }: { children?: ReactNode }) {
       path: "/",
       lazy: () => import("~/routes/_index"),
       ErrorBoundary,
-      /* element: <div>Hello world!</div>,
-       * children: [], */
     },
     {
       path: "/rooms",
       id: "routes/rooms",
-      lazy: () => import("~/routes/rooms"),
+      lazy: () => import("~/routes/rooms/layout"),
       children: [
         {
           index: true,
-          lazy: () => import("~/routes/rooms._index"),
+          lazy: () => import("~/routes/rooms/index"),
         },
         {
           path: ":roomId",
           id: "routes/rooms.$room",
-          lazy: () => import("~/routes/rooms.$room"),
+          lazy: () => import("~/routes/rooms/room"),
           children: [
             {
               path: "messages",
-              lazy: () => import("~/routes/rooms.$room.messages"),
+              lazy: () => import("~/routes/rooms/messages"),
             },
           ],
         },

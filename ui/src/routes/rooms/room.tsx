@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import { client } from "~/lib/api/client";
 import { useLiveLoader } from "~/lib/use-live-loader";
-import { loader as roomsClientLoader } from "./rooms";
+import { loader as roomsClientLoader } from "./layout";
 import { useEffect } from "react";
 import { useLoaderData, useRouteLoaderData } from "~/lib/use-loader-data";
 import { json, redirect } from "@remix-run/react";
