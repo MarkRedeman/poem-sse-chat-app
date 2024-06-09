@@ -1,9 +1,7 @@
 import {
   Form,
-  json,
   useSubmit,
   useNavigation,
-  useActionData,
   ActionFunctionArgs,
 } from "react-router-dom";
 import { CornerDownLeft } from "lucide-react";
@@ -18,7 +16,8 @@ import { Textarea } from "~/components/ui/textarea";
 import { loader as roomsClientLoader } from "./rooms";
 import { loader as roomClientLoader } from "./rooms.$room";
 import { KeyboardEventHandler, useEffect, useRef } from "react";
-import { useRouteLoaderData } from "~/lib/use-loader-data";
+import { useActionData, useRouteLoaderData } from "~/lib/use-loader-data";
+import { json } from "@remix-run/react";
 
 const FormSchema = z.object({
   message: z.string().min(1, {
@@ -64,7 +63,7 @@ function ChatForm() {
   );
 
   const handleKeyDown: KeyboardEventHandler = (event) => {
-    if (event.key === "Enter" && event.shiftKey) {
+    if (event.key === "Enter" && (event.shiftKey || event.ctrlKey)) {
       event.preventDefault();
       // Get the form element
       const form = event.target.form as HTMLFormElement;

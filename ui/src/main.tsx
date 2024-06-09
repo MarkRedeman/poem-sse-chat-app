@@ -11,7 +11,6 @@ import {
   RouterProvider,
   useRouteError,
 } from "react-router-dom";
-import { TooltipProvider } from "~/components/ui/tooltip.tsx";
 
 function ErrorBoundary() {
   const error = useRouteError();
@@ -91,10 +90,8 @@ function Providers({ children }: { children?: ReactNode }) {
       <ReactQueryDevtools initialIsOpen={false} buttonPosition="bottom-left" />
 
       <EventSourceProvider value={eventSourceMap}>
-        <TooltipProvider>
-          <RouterProvider router={router} />
-          {children}
-        </TooltipProvider>
+        <RouterProvider router={router} />
+        {children}
       </EventSourceProvider>
     </QueryClientProvider>
   );

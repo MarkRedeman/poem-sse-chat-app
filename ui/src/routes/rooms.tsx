@@ -1,4 +1,4 @@
-import { ActionFunctionArgs, redirect, json, Outlet } from "react-router-dom";
+import { ActionFunctionArgs, Outlet } from "react-router-dom";
 import { client } from "~/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
@@ -8,6 +8,7 @@ import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";
 import { useLiveLoader } from "~/lib/use-live-loader";
+import { json, redirect } from "@remix-run/react";
 
 const FormSchema = z.object({
   name: z.string().min(1, {
@@ -21,17 +22,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const { id, name } = await zx.parseForm(request, FormSchema);
 
     await client.POST("/rooms", { body: { id, name } });
-
-    // TMP loal state
-    /* rooms.push({
-     *   id,
-     *   name,
-     *   joined: true,
-     *   lastMessage: { content: "No message", date: new Date().getTime() },
-     *   unreadMessages: 0,
-     * }); */
-
-    console.log("REDIRECTING?", { id }, `/rooms/${id}/messages`);
 
     return redirect(`/rooms/${id}/messages`);
   }

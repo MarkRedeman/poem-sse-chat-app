@@ -1,20 +1,31 @@
 import {
   useRouteLoaderData as useRouterRouteLoaderData,
   useLoaderData as useRouterLoaderData,
+  useActionData as useRouterActionData,
 } from "react-router-dom";
 import {
   useLoaderData as useRemixLoaderData,
   useRouteLoaderData as useRemixRouteLoaderData,
+  useActionData as useRemixActionData,
 } from "@remix-run/react";
 
-// @ts-expect-error ignore
-export const useLoaderData: typeof useRemixLoaderData = <T>() => {
+export const useLoaderData = <T>(): ReturnType<
+  typeof useRemixLoaderData<T>
+> => {
+  // @ts-expect-error ignore
   return useRouterLoaderData();
 };
 
-// @ts-expect-error ignore
-export const useRouteLoaderData: typeof useRemixRouteLoaderData = <T>(
-  route
-) => {
+export const useRouteLoaderData = <T>(
+  route: string
+): ReturnType<typeof useRemixRouteLoaderData<T>> => {
+  // @ts-expect-error ignore
   return useRouterRouteLoaderData(route);
+};
+
+export const useActionData = <T>(): ReturnType<
+  typeof useRemixActionData<T>
+> => {
+  // @ts-expect-error ignore
+  return useRouterActionData();
 };
