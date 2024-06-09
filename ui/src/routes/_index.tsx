@@ -3,15 +3,17 @@ import {
   LoaderFunction,
   isRouteErrorResponse,
   useRouteError,
-  redirect,
   NavLink,
+  ActionFunction,
+  Navigate,
 } from "react-router-dom";
-import { LoginForm, LogoutForm } from "~/components/login-form";
+import { LoginForm } from "~/components/login-form";
 import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 import { sessionQueryOptions } from "~/lib/session";
 import { AppContext } from "~/router";
+import { redirect } from "@remix-run/react";
 
 export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
   return async () => {
@@ -32,22 +34,25 @@ const FormSchema = z.object({
   }),
 });
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "DELETE") {
-    await client.DELETE("/session");
+export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
+  return async ({ request }: ActionFunctionArgs) => {
+    if (request.method === "DELETE") {
+      await client.DELETE("/session");
+      queryClient.removeQueries();
 
-    return redirect("/");
-  }
+      return redirect("/");
+    }
 
-  if (request.method === "POST") {
-    const body = await zx.parseForm(request, FormSchema);
+    if (request.method === "POST") {
+      const body = await zx.parseForm(request, FormSchema);
 
-    await client.POST("/session", { body });
+      await client.POST("/session", { body });
 
-    return redirect("/rooms");
-  }
+      return redirect("/rooms");
+    }
 
-  throw new Response("Not found", { status: 404 });
+    throw new Response("Not found", { status: 404 });
+  };
 };
 
 export function ErrorBoundary() {
@@ -92,10 +97,5 @@ export function ErrorBoundary() {
 }
 
 export function Component() {
-  return (
-    <div className="w-full h-screen flex flex-col items-center justify-center gap-4">
-      <h1>Logged in</h1>
-      <LogoutForm />
-    </div>
-  );
+  return <Navigate to="/rooms" />;
 }

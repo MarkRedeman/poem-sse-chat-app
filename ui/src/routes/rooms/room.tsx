@@ -12,6 +12,7 @@ import { AppContext } from "~/router";
 import { roomQueryOptions } from "~/lib/rooms";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { sessionQueryOptions } from "~/lib/session";
+import { API_URL } from "~/lib/api/client";
 
 export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
   return async ({ params }) => {
@@ -53,7 +54,7 @@ function JoinRoom({ roomId }: { roomId: string }) {
 }
 
 export function Component() {
-  useLiveLoader("http://localhost:3000/api/events");
+  useLiveLoader(`${API_URL}/events`);
 
   const { roomId } = useParams<{ roomId: string }>();
   const roomQuery = useSuspenseQuery(roomQueryOptions(roomId!));
