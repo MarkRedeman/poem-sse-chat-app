@@ -40,12 +40,18 @@ export const roomsQueryOptions = () => {
       }
 
       const rooms = response.data;
-      return rooms.map((room): Room => {
+      return rooms.map((room) => {
+        const lastMessage = room.last_message
+          ? {
+              content: room.last_message.message,
+              date: new Date(room.last_message.send_at),
+            }
+          : { content: "hoi", date: new Date().getTime() };
         return {
           id: room.id,
           name: room.name,
           joined: true,
-          lastMessage: { content: "hoi", date: new Date().getTime() },
+          lastMessage,
           unreadMessages: 0,
         };
       });
