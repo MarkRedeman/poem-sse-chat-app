@@ -16,7 +16,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "~/components/ui/tooltip";
-import { Room } from "~/lib/rooms";
 import { useLiveLoader } from "~/lib/use-live-loader";
 import { loader as roomsClientLoader } from "./rooms";
 import { useEffect } from "react";
@@ -67,11 +66,9 @@ export const loader = async ({ params }: LoaderFunctionArgs) => {
     throw new Response("Not Found", { status: 404 });
   }
 
-  console.log("getting room?", { params });
   const response = await client.GET("/rooms/{room_id}", {
     params: { path: { room_id: params.roomId } },
   });
-  console.log("got room?", { params, response });
 
   const room = response.data;
 

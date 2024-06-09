@@ -3,12 +3,7 @@ import { client } from "~/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
-import { Room, rooms } from "~/lib/rooms";
+import { Room } from "~/lib/rooms";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";

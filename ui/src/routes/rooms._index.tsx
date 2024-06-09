@@ -1,8 +1,3 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 import { JoinRoomForm } from "~/components/join-room-form";
 
 export function Component() {

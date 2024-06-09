@@ -1,7 +1,6 @@
 import {
   Form,
   json,
-  useRouteLoaderData,
   useSubmit,
   useNavigation,
   useActionData,
@@ -16,14 +15,10 @@ import { v4 as uuid } from "uuid";
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "~/components/ui/tooltip";
 import { loader as roomsClientLoader } from "./rooms";
 import { loader as roomClientLoader } from "./rooms.$room";
 import { KeyboardEventHandler, useEffect, useRef } from "react";
+import { useRouteLoaderData } from "~/lib/use-loader-data";
 
 const FormSchema = z.object({
   message: z.string().min(1, {

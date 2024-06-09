@@ -1,6 +1,5 @@
-import React, { ReactNode, useState } from "react";
+import { ReactNode, useState } from "react";
 import { createRoot } from "react-dom/client";
-import App from "./App.tsx";
 import "./index.css";
 import { EventSourceProvider } from "./lib/use-event-source";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
@@ -13,27 +12,6 @@ import {
   useRouteError,
 } from "react-router-dom";
 import { TooltipProvider } from "~/components/ui/tooltip.tsx";
-
-function useDb() {
-  const dbRef = useRef<IDBPDatabase<MyDB>>();
-  useEffect(() => {
-    async function open() {
-      const db = await doDatabaseStuff();
-      const storeName = "rooms";
-
-      const storeF = db.transaction(storeName).objectStore(storeName);
-
-      //db.transaction(storeNames)
-      // console.log(storeF);
-
-      dbRef.current = db;
-    }
-
-    open();
-  }, []);
-
-  return dbRef;
-}
 
 function ErrorBoundary() {
   const error = useRouteError();

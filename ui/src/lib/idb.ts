@@ -1,4 +1,5 @@
-import { openDB, deleteDB, wrap, unwrap, DBSchema } from "idb";
+import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
+import { useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
 
 export interface MyDB extends DBSchema {
@@ -84,4 +85,25 @@ export async function doDatabaseStuff() {
   // await tx.done;
 
   return db;
+}
+
+export function useDb() {
+  const dbRef = useRef<IDBPDatabase<MyDB>>();
+  useEffect(() => {
+    async function open() {
+      const db = await doDatabaseStuff();
+      const storeName = "rooms";
+
+      const storeF = db.transaction(storeName).objectStore(storeName);
+
+      //db.transaction(storeNames)
+      console.log(storeF);
+
+      dbRef.current = db;
+    }
+
+    open();
+  }, []);
+
+  return dbRef;
 }

@@ -8,11 +8,13 @@ import {
 } from "@remix-run/react";
 
 // @ts-expect-error ignore
-export const useLoaderData: typeof useRemixLoaderData = () => {
+export const useLoaderData: typeof useRemixLoaderData = <T>() => {
   return useRouterLoaderData();
 };
 
 // @ts-expect-error ignore
-export const useRouteLoaderData: typeof useRemixRouteLoaderData = (route) => {
+export const useRouteLoaderData: typeof useRemixRouteLoaderData = <T>(
+  route
+) => {
   return useRouterRouteLoaderData(route);
 };
