@@ -1,3 +1,4 @@
+// @ts-expect-error ignore
 import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
 import { useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
@@ -41,6 +42,7 @@ export interface MyDB extends DBSchema {
 
 export async function doDatabaseStuff() {
   const db = await openDB<MyDB>("chat-sse", 1, {
+    // @ts-expect-error ignore
     async upgrade(database, oldVersion, newVersion, transaction, event) {
       const storeName = "rooms";
 

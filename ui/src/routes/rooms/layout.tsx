@@ -8,7 +8,7 @@ import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
 
-import { roomsQueryOptions } from "~/lib/rooms";
+import { roomQueryOptions, roomsQueryOptions } from "~/lib/rooms";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
 import { CreateRoomButton } from "~/components/create-room-button";
@@ -25,17 +25,67 @@ const FormSchema = z.object({
   id: z.string().uuid(),
 });
 
+type RoomIndex = {
+  id: string;
+  name: string;
+  joined: boolean;
+  lastMessage: null | { content: string; date: Date };
+  unreadMessages: number;
+};
+
 export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
   return async ({ request }: ActionFunctionArgs) => {
     if (request.method === "POST") {
       const { id, name } = await zx.parseForm(request, FormSchema);
 
       const now = new Date();
-      await client.POST("/rooms", {
-        body: { id, name, created_at: now.toISOString() },
+      const roomsQuery = roomsQueryOptions();
+      const roomQuery = roomQueryOptions(id);
+      await queryClient.cancelQueries({ queryKey: roomsQuery.queryKey });
+
+      // Snapshot the previous value
+      const previousRooms = queryClient.getQueryData<RoomIndex[]>(
+        roomsQuery.queryKey
+      );
+
+      // Optimistically update to the new value
+      const newRoom: RoomIndex = {
+        id,
+        name,
+        joined: true,
+        lastMessage: {
+          content: "",
+          date: new Date(),
+        },
+        unreadMessages: 0,
+      };
+      queryClient.setQueryData<RoomIndex[]>(roomsQuery.queryKey, (old) =>
+        old !== undefined ? [...old, newRoom] : [newRoom]
+      );
+
+      queryClient.setQueryData(roomQuery.queryKey, {
+        id,
+        name,
+        users: [],
+        messages: [],
       });
 
-      return redirect(`/rooms/${id}/messages`);
+      try {
+        client.POST("/rooms", {
+          body: { id, name, created_at: now.toISOString() },
+        });
+
+        queryClient.invalidateQueries(roomsQueryOptions());
+
+        return redirect(`/rooms/${id}/messages`);
+      } catch (e) {
+        queryClient.setQueryData<RoomIndex[]>(
+          roomsQuery.queryKey,
+          previousRooms
+        );
+
+        throw e;
+      }
     }
 
     throw new Response("Not found", { status: 404 });

@@ -1,4 +1,8 @@
-import { ActionFunctionArgs, useParams } from "react-router-dom";
+import {
+  ActionFunction,
+  ActionFunctionArgs,
+  useParams,
+} from "react-router-dom";
 import { z } from "zod";
 import { zx } from "zodix";
 import { client } from "~/lib/api/client";
@@ -8,6 +12,7 @@ import { json } from "@remix-run/react";
 import { roomQueryOptions } from "~/lib/rooms";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { sessionQueryOptions } from "~/lib/session";
+import { AppContext } from "~/router";
 
 const FormSchema = z.object({
   message: z.string().min(1, {
@@ -16,27 +21,78 @@ const FormSchema = z.object({
   id: z.string().uuid(),
 });
 
-export const action = async ({ request, params }: ActionFunctionArgs) => {
-  if (request.method === "POST") {
-    const body = await zx.parseForm(request, FormSchema);
-    const room_id = params.roomId;
+type Message = {
+  id: string;
+  room_id: string;
+  username: string;
+  message: string;
+  send_at: string;
+};
 
-    if (room_id === undefined) {
-      throw new Response("Not found", { status: 404 });
+type RoomData = {
+  id: string;
+  name: string;
+  users: string[];
+  messages: Message[];
+};
+
+export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
+  return async ({ request, params }: ActionFunctionArgs) => {
+    if (request.method === "POST") {
+      const body = await zx.parseForm(request, FormSchema);
+      const roomId = params.roomId;
+
+      if (roomId === undefined) {
+        throw new Response("Not found", { status: 404 });
+      }
+
+      const roomQuery = roomQueryOptions(roomId);
+
+      const { username } = queryClient.getQueryData<RoomData>(
+        sessionQueryOptions().queryKey
+      );
+      const previousRoom = queryClient.getQueryData<RoomData>(
+        roomQuery.queryKey
+      );
+
+      const now = new Date();
+
+      try {
+        client.POST("/rooms/{room_id}/messages", {
+          body: {
+            ...body,
+            send_at: now.toISOString(),
+          },
+          params: { path: { room_id: roomId } },
+        });
+
+        queryClient.setQueryData<RoomData>(roomQuery.queryKey, (old) =>
+          old === undefined
+            ? undefined
+            : {
+                ...old,
+                messages: [
+                  ...old.messages,
+                  {
+                    ...body,
+                    username,
+                    send_at: now.toISOString(),
+                  },
+                ],
+              }
+        );
+
+        queryClient.invalidateQueries({ queryKey: roomQuery.queryKey });
+
+        return json({ ok: true });
+      } catch (e) {
+        queryClient.setQueryData<RoomData>(roomQuery.queryKey, previousRoom);
+        throw e;
+      }
     }
 
-    const now = new Date();
-    await client.POST("/rooms/{room_id}/messages", {
-      body: {
-        ...body,
-        send_at: now.toISOString(),
-      },
-      params: { path: { room_id } },
-    });
-    return json({ ok: true });
-  }
-
-  throw new Response("Not found", { status: 404 });
+    throw new Response("Not found", { status: 404 });
+  };
 };
 
 export function Component() {

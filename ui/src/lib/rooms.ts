@@ -36,7 +36,7 @@ export const roomsQueryOptions = () => {
       const response = await client.GET("/rooms");
 
       if (response.data === undefined) {
-        throw response;
+        throw response.response;
       }
 
       const rooms = response.data;
@@ -68,7 +68,7 @@ export const roomQueryOptions = (roomId: string) => {
       });
 
       if (response.data === undefined) {
-        throw response;
+        throw response.response;
       }
 
       return response.data;

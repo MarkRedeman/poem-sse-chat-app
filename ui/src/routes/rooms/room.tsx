@@ -31,16 +31,6 @@ export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
   };
 };
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "POST") {
-    //await client.POST("/session");
-
-    return redirect("/rooms");
-  }
-
-  throw new Response("Not found", { status: 404 });
-};
-
 function JoinRoom({ roomId }: { roomId: string }) {
   const fetcher = useFetcher();
   useEffect(() => {
@@ -59,6 +49,7 @@ export function Component() {
   const { roomId } = useParams<{ roomId: string }>();
   const roomQuery = useSuspenseQuery(roomQueryOptions(roomId!));
   const room = roomQuery.data;
+
   const sessionQuery = useSuspenseQuery(sessionQueryOptions());
   const username = sessionQuery.data.username;
 

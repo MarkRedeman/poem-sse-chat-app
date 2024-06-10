@@ -1,14 +1,27 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { NavLink } from "react-router-dom";
-import { Room } from "~/lib/rooms";
+import { Room, roomQueryOptions } from "~/lib/rooms";
+
+function usePrefetchRoom() {
+  const queryClient = useQueryClient();
+
+  return (roomId: string) => {
+    queryClient.prefetchQuery(roomQueryOptions(roomId));
+  };
+}
 
 export function RoomLink({ room, idx }: { room: Room; idx: number }) {
   const date = new Date(room.lastMessage.date);
   const text = date.toTimeString().split(" ")[0]?.slice(0, 5);
+  const prefetchRoom = usePrefetchRoom();
 
   return (
     <li>
       <NavLink
         to={`/rooms/${room.id}/messages`}
+        onPointerEnter={() => {
+          prefetchRoom(room.id);
+        }}
         className={({ isActive }) => {
           return `px-4 py-2 flex justify-between items-center rounded
            ${
