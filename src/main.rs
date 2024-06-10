@@ -172,7 +172,6 @@ impl Api {
         match room {
             None => Err(Error::from_status(StatusCode::NOT_FOUND)),
             Some(room) => {
-                //let messages = ctx.messages_in_room.lock().await.get(&room.id);
                 let messages = ctx
                     .messages_in_room
                     .lock()
@@ -305,6 +304,27 @@ impl Api {
             });
 
         Ok(())
+    }
+
+    #[oai(
+        path = "/rooms/:room_id/messages",
+        method = "get",
+        transform = "protect"
+    )]
+    async fn get_messages(
+        &self,
+        room_id: Path<Uuid>,
+        ctx: Data<&Context>,
+    ) -> Result<Json<Vec<Message>>> {
+        let messages = ctx
+            .messages_in_room
+            .lock()
+            .await
+            .entry(room_id.0)
+            .or_default()
+            .clone();
+
+        Ok(Json(messages))
     }
 
     #[oai(
@@ -700,6 +720,74 @@ mod test {
                 },
             ]
         );
+
+        // Get rooms
+        let resp = client
+            .get("/api/rooms")
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+        resp.assert_json(json!([
+            {
+                "id": room_id,
+                "joined": true,
+                "last_message": {
+                    "id": message_id,
+                    "message": "Hoi",
+                    "room_id": room_id,
+                    "send_at": "2024-06-09T12:00:00Z",
+                    "username": "John"
+                },
+                "name": "Lustrum Crash & Compile"
+            }
+        ]))
+        .await;
+
+        // Get room
+        let resp = client
+            .get(format!("/api/rooms/{}", room_id))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+        resp.assert_json(json!(
+            {
+                "id": room_id,
+                "name": "Lustrum Crash & Compile",
+                "users": ["John", "Jane"],
+                "messages": [{
+                    "id": message_id,
+                    "message": "Hoi",
+                    "room_id": room_id,
+                    "send_at": "2024-06-09T12:00:00Z",
+                    "username": "John"
+                }],
+            }
+        ))
+        .await;
+
+        // Get messages
+        let resp = client
+            .get(format!("/api/rooms/{}/messages", room_id))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+        resp.assert_json(json!([{
+            "id": message_id,
+            "message": "Hoi",
+            "room_id": room_id,
+            "send_at": "2024-06-09T12:00:00Z",
+            "username": "John"
+        }]))
+        .await;
     }
 
     #[tokio::test]
