@@ -43,25 +43,32 @@ export function App() {
       lazy: lazy(import("~/routes/rooms/layout"), { queryClient }),
       children: [
         {
-          index: true,
           ErrorBoundary,
-          lazy: lazy(import("~/routes/rooms/index"), { queryClient }),
-        },
-        {
-          path: ":roomId",
-          id: "routes/rooms.$room",
-          ErrorBoundary,
-          lazy: lazy(import("~/routes/rooms/room"), { queryClient }),
           children: [
             {
-              path: "messages",
+              index: true,
               ErrorBoundary,
-              lazy: lazy(import("~/routes/rooms/messages"), { queryClient }),
+              lazy: lazy(import("~/routes/rooms/index"), { queryClient }),
             },
             {
-              path: "users",
+              path: ":roomId",
+              id: "routes/rooms.$room",
               ErrorBoundary,
-              lazy: lazy(import("~/routes/rooms/users"), { queryClient }),
+              lazy: lazy(import("~/routes/rooms/room"), { queryClient }),
+              children: [
+                {
+                  path: "messages",
+                  ErrorBoundary,
+                  lazy: lazy(import("~/routes/rooms/messages"), {
+                    queryClient,
+                  }),
+                },
+                {
+                  path: "users",
+                  ErrorBoundary,
+                  lazy: lazy(import("~/routes/rooms/users"), { queryClient }),
+                },
+              ],
             },
           ],
         },
