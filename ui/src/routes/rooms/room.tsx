@@ -1,18 +1,18 @@
-import {
-  Outlet,
-  useParams,
-  ActionFunctionArgs,
-  useFetcher,
-  LoaderFunction,
-} from "react-router-dom";
-import { useLiveLoader } from "~/lib/use-live-loader";
-import { useEffect } from "react";
 import { json, redirect } from "@remix-run/react";
-import { AppContext } from "~/router";
-import { roomQueryOptions } from "~/lib/rooms";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { sessionQueryOptions } from "~/lib/session";
+import { useEffect } from "react";
+import {
+  ActionFunctionArgs,
+  LoaderFunction,
+  Outlet,
+  useFetcher,
+  useParams,
+} from "react-router-dom";
 import { API_URL } from "~/lib/api/client";
+import { roomQueryOptions } from "~/lib/rooms";
+import { sessionQueryOptions } from "~/lib/session";
+import { useLiveLoader } from "~/lib/use-live-loader";
+import { AppContext } from "~/router";
 
 export const buildLoader = ({ queryClient }: AppContext): LoaderFunction => {
   return async ({ params }) => {

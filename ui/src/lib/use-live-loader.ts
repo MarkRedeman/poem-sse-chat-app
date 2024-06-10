@@ -1,8 +1,9 @@
-import { useRevalidator } from "react-router-dom";
-import { useEventSource } from "./use-event-source";
-import { useEffect, useRef } from "react";
-import { useLoaderData } from "./use-loader-data";
 import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef } from "react";
+import { useRevalidator } from "react-router-dom";
+
+import { useEventSource } from "./use-event-source";
+import { useLoaderData } from "./use-loader-data";
 
 const wait = (n: number) => new Promise((resolve) => setTimeout(resolve, n));
 

@@ -1,22 +1,21 @@
+import { json, redirect } from "@remix-run/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   ActionFunction,
   ActionFunctionArgs,
   LoaderFunction,
   Outlet,
 } from "react-router-dom";
-import { client } from "~/lib/api/client";
 import { z } from "zod";
 import { zx } from "zodix";
-
-import { roomQueryOptions, roomsQueryOptions } from "~/lib/rooms";
+import { CreateRoomButton } from "~/components/create-room-button";
 import { Header } from "~/components/header";
 import { RoomLinks } from "~/components/room-links";
-import { CreateRoomButton } from "~/components/create-room-button";
-import { useLiveLoader } from "~/lib/use-live-loader";
-import { json, redirect } from "@remix-run/react";
-import { AppContext } from "~/router";
+import { client } from "~/lib/api/client";
+import { roomQueryOptions, roomsQueryOptions } from "~/lib/rooms";
 import { sessionQueryOptions } from "~/lib/session";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useLiveLoader } from "~/lib/use-live-loader";
+import { AppContext } from "~/router";
 
 const FormSchema = z.object({
   name: z.string().min(1, {

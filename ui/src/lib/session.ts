@@ -1,4 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
+
 import { client } from "./api/client";
 
 export const sessionQueryOptions = () => {

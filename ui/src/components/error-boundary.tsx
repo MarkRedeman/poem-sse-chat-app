@@ -1,8 +1,4 @@
-import {
-  NavLink,
-  isRouteErrorResponse,
-  useRouteError,
-} from "react-router-dom";
+import { NavLink, isRouteErrorResponse, useRouteError } from "react-router-dom";
 
 export function ErrorBoundary() {
   const error = useRouteError();

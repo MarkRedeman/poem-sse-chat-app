@@ -1,3 +1,5 @@
+import { json } from "@remix-run/react";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   ActionFunction,
   ActionFunctionArgs,
@@ -5,12 +7,9 @@ import {
 } from "react-router-dom";
 import { z } from "zod";
 import { zx } from "zodix";
-import { client } from "~/lib/api/client";
-
 import { ChatForm } from "~/components/chat-form";
-import { json } from "@remix-run/react";
+import { client } from "~/lib/api/client";
 import { roomQueryOptions } from "~/lib/rooms";
-import { useSuspenseQuery } from "@tanstack/react-query";
 import { sessionQueryOptions } from "~/lib/session";
 import { AppContext } from "~/router";
 

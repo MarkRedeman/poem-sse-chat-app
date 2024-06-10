@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { EventSourceProvider } from "./lib/use-event-source";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { lazy } from "./router";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { useState } from "react";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+
 import { ErrorBoundary } from "./components/error-boundary";
+import { EventSourceProvider } from "./lib/use-event-source";
+import { lazy } from "./router";
 
 export function App() {
   const [eventSourceMap] = useState(

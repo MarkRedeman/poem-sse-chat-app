@@ -1,11 +1,10 @@
-import { Form, useSubmit, useNavigation } from "react-router-dom";
 import { CornerDownLeft } from "lucide-react";
+import { KeyboardEventHandler, useEffect, useRef } from "react";
+import { Form, useNavigation, useSubmit } from "react-router-dom";
 import { v4 as uuid } from "uuid";
-
 import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
-import { KeyboardEventHandler, useEffect, useRef } from "react";
 import { useActionData } from "~/lib/use-loader-data";
 import { action } from "~/routes/rooms/messages";
 

@@ -1,7 +1,6 @@
+import { json } from "@remix-run/react";
 import { ActionFunctionArgs } from "react-router-dom";
 import { client } from "~/lib/api/client";
-
-import { json } from "@remix-run/react";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   if (request.method === "POST") {

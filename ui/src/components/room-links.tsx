@@ -1,4 +1,5 @@
 import { Room } from "~/lib/rooms";
+
 import { RoomLink } from "./room-link";
 
 export function RoomLinks({ rooms }: { rooms: Room[] }) {

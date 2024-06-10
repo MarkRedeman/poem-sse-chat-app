@@ -1,5 +1,5 @@
 // @ts-expect-error ignore
-import { openDB, deleteDB, wrap, unwrap, DBSchema, IDBPDatabase } from "idb";
+import { DBSchema, IDBPDatabase, deleteDB, openDB, unwrap, wrap } from "idb";
 import { useEffect, useRef } from "react";
 import { v4 as uuid } from "uuid";
 
