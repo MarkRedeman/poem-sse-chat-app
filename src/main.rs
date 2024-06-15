@@ -20,6 +20,44 @@ use tokio::sync::{broadcast, Mutex};
 use uuid::Uuid;
 
 #[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
+struct Cursor {
+    offset: Option<usize>,
+    limit: usize,
+}
+
+#[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
+struct Pagination {
+    total_items: usize,
+    per_page: usize,
+    total_pages: usize,
+    current_page: usize,
+    next_page: Option<usize>,
+    previous_page: Option<usize>,
+}
+
+#[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
+struct ItemResponse<T: poem_openapi::types::ParseFromJSON + poem_openapi::types::ToJSON> {
+    data: T,
+}
+
+#[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
+struct CollectionResponse<T: poem_openapi::types::ParseFromJSON + poem_openapi::types::ToJSON> {
+    items: Vec<T>,
+    pagination: Pagination,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct PaginationRequest {
+    page: usize,
+    limit: Option<usize>,
+}
+
+struct ErrorResponse {
+    message: String,
+    error_code: String,
+}
+
+#[derive(Debug, Object, Clone, Serialize, Eq, PartialEq)]
 pub struct Message {
     id: Uuid,
     room_id: Uuid,
@@ -315,7 +353,7 @@ impl Api {
         &self,
         room_id: Path<Uuid>,
         ctx: Data<&Context>,
-    ) -> Result<Json<Vec<Message>>> {
+    ) -> Result<Json<CollectionResponse<Message>>> {
         let messages = ctx
             .messages_in_room
             .lock()
@@ -324,7 +362,20 @@ impl Api {
             .or_default()
             .clone();
 
-        Ok(Json(messages))
+        //Ok(Json(messages))
+        let total_items = messages.len();
+
+        Ok(Json(CollectionResponse {
+            items: messages,
+            pagination: Pagination {
+                current_page: 0,
+                per_page: total_items,
+                total_items: total_items,
+                total_pages: 1,
+                next_page: None,
+                previous_page: None,
+            },
+        }))
     }
 
     #[oai(
@@ -780,13 +831,25 @@ mod test {
             .await;
 
         resp.assert_status_is_ok();
-        resp.assert_json(json!([{
-            "id": message_id,
-            "message": "Hoi",
-            "room_id": room_id,
-            "send_at": "2024-06-09T12:00:00Z",
-            "username": "John"
-        }]))
+        resp.assert_json(json!({
+            "items": [
+                {
+                    "id": message_id,
+                    "message": "Hoi",
+                    "room_id": room_id,
+                    "send_at": "2024-06-09T12:00:00Z",
+                    "username": "John"
+                },
+            ],
+            "pagination": {
+                "current_page": 0,
+                "per_page": 1,
+                "total_items": 1,
+                "total_pages": 1,
+                "next_page": null,
+                "previous_page": null
+            }
+        }))
         .await;
     }
 
