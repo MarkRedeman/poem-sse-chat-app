@@ -1,8 +1,7 @@
-import { json, redirect } from "@remix-run/react";
+import { json } from "@remix-run/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import {
-  ActionFunctionArgs,
   LoaderFunction,
   Outlet,
   useFetcher,

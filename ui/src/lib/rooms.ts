@@ -1,5 +1,4 @@
 import { queryOptions } from "@tanstack/react-query";
-import { v4 as uuid } from "uuid";
 
 import { client } from "./api/client";
 
@@ -8,27 +7,8 @@ export type Room = {
   name: string;
   joined: boolean;
   unreadMessages: number;
-  lastMessage: { content: string; date: number };
+  lastMessage: { content: string; date: Date };
 };
-
-const today = new Date();
-
-export const rooms: Room[] = [...new Array(25)].map((_, idx) => {
-  const name = `Room ${idx}`;
-  const id = uuid();
-  return {
-    id,
-    name,
-    joined: true,
-    unreadMessages: Math.round(Math.random() * 100),
-    lastMessage: {
-      content: "Lorem ipsum dolar set amet",
-      date: new Date(
-        today.getTime() - Math.round(Math.random() * 20_000_000)
-      ).getTime(),
-    },
-  };
-});
 
 export const roomsQueryOptions = () => {
   return queryOptions({
@@ -47,7 +27,7 @@ export const roomsQueryOptions = () => {
               content: room.last_message.message,
               date: new Date(room.last_message.send_at),
             }
-          : { content: "hoi", date: new Date().getTime() };
+          : { content: "hoi", date: new Date() };
         return {
           id: room.id,
           name: room.name,

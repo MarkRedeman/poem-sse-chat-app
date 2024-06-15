@@ -47,9 +47,10 @@ export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
 
       const roomQuery = roomQueryOptions(roomId);
 
-      const { username } = queryClient.getQueryData<RoomData>(
+      const previousSession = queryClient.getQueryData<{ username: string }>(
         sessionQueryOptions().queryKey
       );
+      const username = previousSession!.username;
       const previousRoom = queryClient.getQueryData<RoomData>(
         roomQuery.queryKey
       );
@@ -65,20 +66,26 @@ export const buildAction = ({ queryClient }: AppContext): ActionFunction => {
           params: { path: { room_id: roomId } },
         });
 
-        queryClient.setQueryData<RoomData>(roomQuery.queryKey, (old) =>
-          old === undefined
-            ? undefined
-            : {
-                ...old,
-                messages: [
-                  ...old.messages,
-                  {
-                    ...body,
-                    username,
-                    send_at: now.toISOString(),
-                  },
-                ],
-              }
+        queryClient.setQueryData<RoomData | undefined>(
+          roomQuery.queryKey,
+          (old) => {
+            if (old === undefined) {
+              return undefined;
+            }
+
+            return {
+              ...old,
+              messages: [
+                ...old.messages,
+                {
+                  ...body,
+                  room_id: roomId,
+                  username,
+                  send_at: now.toISOString(),
+                },
+              ],
+            };
+          }
         );
 
         queryClient.invalidateQueries({ queryKey: roomQuery.queryKey });

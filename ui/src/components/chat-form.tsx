@@ -6,7 +6,7 @@ import { Button } from "~/components/ui/button";
 import { Label } from "~/components/ui/label";
 import { Textarea } from "~/components/ui/textarea";
 import { useActionData } from "~/lib/use-loader-data";
-import { action } from "~/routes/rooms/messages";
+import { buildAction } from "~/routes/rooms/messages";
 
 export function ChatForm() {
   const id = uuid();
@@ -14,7 +14,7 @@ export function ChatForm() {
   const $form = useRef<HTMLFormElement>(null);
 
   const navigation = useNavigation();
-  const actionData = useActionData<typeof action>();
+  const actionData = useActionData<ReturnType<typeof buildAction>>();
 
   useEffect(
     function resetFormOnSuccess() {
