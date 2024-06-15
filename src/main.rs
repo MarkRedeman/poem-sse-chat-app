@@ -4,7 +4,10 @@ mod events;
 use std::{collections::HashMap, sync::Arc};
 
 use auth::{protect, AuthData};
-use events::{BroadcastingEventBus, DomainEvent, ShareableEventBus};
+use events::{
+    BroadcastingEventBus, DomainEvent, MessageWasSend, RoomWasCreated, ShareableEventBus,
+    UserJoinedRoom, UserLeftRoom, UserLoggedIn, UserLoggedOut,
+};
 use poem::{
     http::StatusCode,
     listener::TcpListener,
@@ -135,9 +138,9 @@ impl Api {
         session.set("username", request.username.clone());
 
         ctx.bus
-            .dispatch_event(DomainEvent::UserLoggedIn {
+            .dispatch_event(DomainEvent::UserLoggedIn(UserLoggedIn {
                 username: request.username.clone(),
-            })
+            }))
             .await;
 
         Ok(())
@@ -153,9 +156,9 @@ impl Api {
         let username = auth_data.username.clone();
 
         ctx.bus
-            .dispatch_event(DomainEvent::UserLoggedOut {
+            .dispatch_event(DomainEvent::UserLoggedOut(UserLoggedOut {
                 username: username.clone(),
-            })
+            }))
             .await;
 
         session.remove("username");
@@ -251,21 +254,21 @@ impl Api {
         };
 
         ctx.bus
-            .dispatch_event(DomainEvent::RoomWasCreated {
+            .dispatch_event(DomainEvent::RoomWasCreated(RoomWasCreated {
                 id: room.id,
                 name: room.name.clone(),
                 created_at: request.created_at,
-            })
+            }))
             .await;
 
         ctx.rooms.lock().await.push(room.clone());
 
         ctx.bus
-            .dispatch_event(DomainEvent::UserJoinedRoom {
+            .dispatch_event(DomainEvent::UserJoinedRoom(UserJoinedRoom {
                 room_id: room.id,
                 username: username.clone(),
                 joined_at: request.created_at,
-            })
+            }))
             .await;
 
         ctx.users_in_room
@@ -295,11 +298,11 @@ impl Api {
             users.push(auth_data.username.clone());
 
             ctx.bus
-                .dispatch_event(DomainEvent::UserJoinedRoom {
+                .dispatch_event(DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id: room_id.0,
                     username: auth_data.username.clone(),
                     joined_at: request.joined_at,
-                })
+                }))
                 .await;
         }
 
@@ -319,13 +322,13 @@ impl Api {
         auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
-            .dispatch_event(DomainEvent::MessageWasSend {
+            .dispatch_event(DomainEvent::MessageWasSend(MessageWasSend {
                 id: request.id,
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
                 message: request.message.clone(),
                 send_at: request.send_at,
-            })
+            }))
             .await;
 
         ctx.messages_in_room
@@ -391,11 +394,11 @@ impl Api {
         auth_data: Data<&AuthData>,
     ) -> Result<()> {
         ctx.bus
-            .dispatch_event(DomainEvent::UserLeftRoom {
+            .dispatch_event(DomainEvent::UserLeftRoom(UserLeftRoom {
                 room_id: room_id.0,
                 username: auth_data.username.clone(),
                 left_at: request.left_at,
-            })
+            }))
             .await;
 
         Ok(())
@@ -472,7 +475,10 @@ mod test {
     use std::{collections::HashMap, sync::Arc};
 
     use crate::{
-        events::{DomainEvent, RecordingEventBus},
+        events::{
+            DomainEvent, MessageWasSend, RecordingEventBus, RoomWasCreated, UserJoinedRoom,
+            UserLeftRoom, UserLoggedIn, UserLoggedOut,
+        },
         Context,
     };
 
@@ -556,22 +562,22 @@ mod test {
         assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "Jane".to_string()
-                },
-                DomainEvent::UserLoggedIn {
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::RoomWasCreated {
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string(),
                     created_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "John".to_string(),
                     joined_at: now,
-                },
+                }),
             ]
         );
 
@@ -595,27 +601,27 @@ mod test {
         assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "Jane".to_string()
-                },
-                DomainEvent::UserLoggedIn {
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::RoomWasCreated {
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string(),
                     created_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "John".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "Jane".to_string(),
                     joined_at: now,
-                },
+                }),
             ]
         );
 
@@ -640,27 +646,27 @@ mod test {
         assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "Jane".to_string()
-                },
-                DomainEvent::UserLoggedIn {
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::RoomWasCreated {
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string(),
                     created_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "John".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "Jane".to_string(),
                     joined_at: now,
-                },
+                }),
             ]
         );
 
@@ -685,34 +691,34 @@ mod test {
         assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "Jane".to_string()
-                },
-                DomainEvent::UserLoggedIn {
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::RoomWasCreated {
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string(),
                     created_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "John".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "Jane".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::MessageWasSend {
+                }),
+                DomainEvent::MessageWasSend(MessageWasSend {
                     id: message_id,
                     room_id,
                     username: "John".to_string(),
                     message: "Hoi".to_string(),
                     send_at: now,
-                },
+                }),
             ]
         );
 
@@ -733,42 +739,42 @@ mod test {
 
         let recorded_events = bus.recorded_events().await;
         assert_eq!(recorded_events.len(), 7);
-        assert_eq!(
+        let var_name = assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "Jane".to_string()
-                },
-                DomainEvent::UserLoggedIn {
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::RoomWasCreated {
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
                     id: room_id,
                     name: "Lustrum Crash & Compile".to_string(),
                     created_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "John".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::UserJoinedRoom {
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
                     room_id,
                     username: "Jane".to_string(),
                     joined_at: now,
-                },
-                DomainEvent::MessageWasSend {
+                }),
+                DomainEvent::MessageWasSend(MessageWasSend {
                     id: message_id,
                     room_id,
                     username: "John".to_string(),
                     message: "Hoi".to_string(),
                     send_at: now,
-                },
-                DomainEvent::UserLeftRoom {
+                }),
+                DomainEvent::UserLeftRoom(UserLeftRoom {
                     room_id,
                     username: "John".to_string(),
                     left_at: now,
-                },
+                }),
             ]
         );
 
@@ -896,9 +902,9 @@ mod test {
         assert_eq!(recorded_events.len(), 1);
         assert_eq!(
             recorded_events,
-            vec![DomainEvent::UserLoggedIn {
+            vec![DomainEvent::UserLoggedIn(UserLoggedIn {
                 username: "John".to_string()
-            }]
+            })]
         );
 
         let resp = client
@@ -915,12 +921,12 @@ mod test {
         assert_eq!(
             recorded_events,
             vec![
-                DomainEvent::UserLoggedIn {
+                DomainEvent::UserLoggedIn(UserLoggedIn {
                     username: "John".to_string()
-                },
-                DomainEvent::UserLoggedOut {
+                }),
+                DomainEvent::UserLoggedOut(UserLoggedOut {
                     username: "John".to_string()
-                },
+                }),
             ]
         );
     }

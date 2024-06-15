@@ -3,6 +3,7 @@
  * Do not make direct changes to the file.
  */
 
+
 export interface paths {
   "/session": {
     get: {
@@ -112,6 +113,20 @@ export interface paths {
     };
   };
   "/rooms/{room_id}/messages": {
+    get: {
+      parameters: {
+        path: {
+          room_id: string;
+        };
+      };
+      responses: {
+        200: {
+          content: {
+            "application/json; charset=utf-8": components["schemas"]["CollectionResponse<Message>"];
+          };
+        };
+      };
+    };
     post: {
       parameters: {
         path: {
@@ -161,6 +176,17 @@ export interface paths {
       };
     };
   };
+  "/get-event-types": {
+    get: {
+      responses: {
+        200: {
+          content: {
+            "application/json; charset=utf-8": components["schemas"]["DomainEvent"];
+          };
+        };
+      };
+    };
+  };
 }
 
 export type webhooks = Record<string, never>;
@@ -169,6 +195,10 @@ export interface components {
   schemas: {
     AuthData: {
       username: string;
+    };
+    "CollectionResponse<Message>": {
+      items: components["schemas"]["Message"][];
+      pagination: components["schemas"]["Pagination"];
     };
     CreateRoomRequest: {
       /** Format: uuid */
@@ -184,6 +214,7 @@ export interface components {
       messages: components["schemas"]["Message"][];
       users: string[];
     };
+    DomainEvent: components["schemas"]["UserLoggedIn"] | components["schemas"]["UserLoggedOut"] | components["schemas"]["RoomWasCreated"] | components["schemas"]["UserJoinedRoom"] | components["schemas"]["UserLeftRoom"] | components["schemas"]["MessageWasSend"];
     IndexRoom: {
       /** Format: uuid */
       id: string;
@@ -212,10 +243,41 @@ export interface components {
       /** Format: date-time */
       send_at: string;
     };
+    MessageWasSend: {
+      /** Format: uuid */
+      id: string;
+      /** Format: uuid */
+      room_id: string;
+      username: string;
+      message: string;
+      /** Format: date-time */
+      send_at: string;
+    };
+    Pagination: {
+      /** Format: uint64 */
+      total_items: number;
+      /** Format: uint64 */
+      per_page: number;
+      /** Format: uint64 */
+      total_pages: number;
+      /** Format: uint64 */
+      current_page: number;
+      /** Format: uint64 */
+      next_page?: number;
+      /** Format: uint64 */
+      previous_page?: number;
+    };
     Room: {
       /** Format: uuid */
       id: string;
       name: string;
+    };
+    RoomWasCreated: {
+      /** Format: uuid */
+      id: string;
+      name: string;
+      /** Format: date-time */
+      created_at: string;
     };
     SendMessageRequest: {
       /** Format: uuid */
@@ -223,6 +285,26 @@ export interface components {
       message: string;
       /** Format: date-time */
       send_at: string;
+    };
+    UserJoinedRoom: {
+      /** Format: uuid */
+      room_id: string;
+      username: string;
+      /** Format: date-time */
+      joined_at: string;
+    };
+    UserLeftRoom: {
+      /** Format: uuid */
+      room_id: string;
+      username: string;
+      /** Format: date-time */
+      left_at: string;
+    };
+    UserLoggedIn: {
+      username: string;
+    };
+    UserLoggedOut: {
+      username: string;
     };
   };
   responses: never;

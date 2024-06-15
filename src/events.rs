@@ -2,8 +2,10 @@ use futures_util::{stream::BoxStream, StreamExt};
 use poem::async_trait;
 use poem::web::Data;
 use poem::Result;
+use poem_openapi::payload::Json;
+use poem_openapi::Union;
 use poem_openapi::{payload::EventStream, Object, OpenApi};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use std::sync::Arc;
@@ -15,62 +17,55 @@ use uuid::Uuid;
 
 use crate::Context;
 
-#[derive(Debug, Object, Clone, Serialize, PartialEq)]
-pub struct MyEvent {
-    value: i64,
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct UserLoggedIn {
+    pub username: String,
 }
 
-#[derive(Debug, Object, Clone, Serialize, PartialEq)]
-pub struct OtherEvent {
-    other_value: i64,
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct UserLoggedOut {
+    pub username: String,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct PlayerId(Uuid);
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct GameId(Uuid);
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct QuestionId(Uuid);
-
-#[derive(Debug, Clone, Serialize, PartialEq)]
-pub struct Position {
-    x: u32,
-    y: u32,
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct RoomWasCreated {
+    pub id: Uuid,
+    pub name: String,
+    pub created_at: OffsetDateTime,
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
-#[serde(tag = "type")]
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct UserJoinedRoom {
+    pub room_id: Uuid,
+    pub username: String,
+    pub joined_at: OffsetDateTime,
+}
+
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct UserLeftRoom {
+    pub room_id: Uuid,
+    pub username: String,
+    pub left_at: OffsetDateTime,
+}
+
+#[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+pub struct MessageWasSend {
+    pub id: Uuid,
+    pub room_id: Uuid,
+    pub username: String,
+    pub message: String,
+    pub send_at: OffsetDateTime,
+}
+
+#[derive(Debug, Clone, Serialize, PartialEq, Eq, Union)]
+#[serde(tag = "type", content = "payload")]
 pub enum DomainEvent {
-    UserLoggedIn {
-        username: String,
-    },
-    UserLoggedOut {
-        username: String,
-    },
-    RoomWasCreated {
-        id: Uuid,
-        name: String,
-        created_at: OffsetDateTime,
-    },
-    UserJoinedRoom {
-        room_id: Uuid,
-        username: String,
-        joined_at: OffsetDateTime,
-    },
-    UserLeftRoom {
-        room_id: Uuid,
-        username: String,
-        left_at: OffsetDateTime,
-    },
-    MessageWasSend {
-        id: Uuid,
-        room_id: Uuid,
-        username: String,
-        message: String,
-        send_at: OffsetDateTime,
-    },
+    UserLoggedIn(UserLoggedIn),
+    UserLoggedOut(UserLoggedOut),
+    RoomWasCreated(RoomWasCreated),
+    UserJoinedRoom(UserJoinedRoom),
+    UserLeftRoom(UserLeftRoom),
+    MessageWasSend(MessageWasSend),
 }
 
 #[allow(dead_code)]
@@ -231,23 +226,28 @@ impl Api {
 
             let now = OffsetDateTime::now_utc();
             let room_id = Uuid::new_v4();
-            let event = DomainEvent::RoomWasCreated {
+            let event = DomainEvent::RoomWasCreated(RoomWasCreated {
                 id: room_id,
                 name: String::from("Random room"),
                 created_at: now,
-            };
+            });
             ctx.bus.dispatch_event(event.clone()).await;
 
             tokio::time::sleep(second).await;
 
-            let event = DomainEvent::UserJoinedRoom {
+            let event = DomainEvent::UserJoinedRoom(UserJoinedRoom {
                 room_id,
                 username: "Francken".to_string(),
                 joined_at: now,
-            };
+            });
             ctx.bus.dispatch_event(event.clone()).await;
         }
 
         Ok(())
+    }
+
+    #[oai(path = "/get-event-types", method = "get")]
+    async fn get_event_types(&self) -> Result<Json<Option<DomainEvent>>> {
+        Ok(Json(None))
     }
 }
