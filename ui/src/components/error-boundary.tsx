@@ -1,4 +1,19 @@
 import { NavLink, isRouteErrorResponse, useRouteError } from "react-router-dom";
+import { ReactNode } from "react";
+
+import { Button } from "./ui/button";
+
+function BackButton() {
+  return (
+    <Button asChild>
+      <NavLink to="/">Back</NavLink>
+    </Button>
+  );
+}
+
+function Header({ children }: { children: ReactNode }) {
+  return <h1 className="text-2xl font-bold tracking-tight">{children}</h1>;
+}
 
 export function ErrorBoundary() {
   const error = useRouteError();
@@ -6,30 +21,30 @@ export function ErrorBoundary() {
 
   if (isRouteErrorResponse(error)) {
     return (
-      <div>
-        <h1>
+      <div className="w-full h-screen flex flex-col gap-4 items-center justify-center">
+        <Header>
           {error.status} {error.statusText}
-        </h1>
+        </Header>
         <p>{error.data}</p>
-        <NavLink to="/">Back</NavLink>
+        <BackButton />
       </div>
     );
   } else if (error instanceof Error) {
     return (
-      <div>
-        <h1>Error</h1>
+      <div className="w-full h-screen flex flex-col gap-4 items-center justify-center">
+        <Header>Error</Header>
         <p>{error.message}</p>
         <p>The stack trace is:</p>
         <pre>{error.stack}</pre>
-        <NavLink to="/">Back</NavLink>
+        <BackButton />
       </div>
     );
   } else {
     return (
-      <>
-        <h1>Unknown Error</h1>
-        <NavLink to="/">Back</NavLink>
-      </>
+      <div className="w-full h-screen flex flex-col gap-4 items-center justify-center">
+        <Header>Unknown Error</Header>
+        <BackButton />
+      </div>
     );
   }
 }

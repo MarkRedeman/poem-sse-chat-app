@@ -3,13 +3,13 @@ import {
   ActionFunction,
   ActionFunctionArgs,
   LoaderFunction,
-  NavLink,
   Navigate,
   isRouteErrorResponse,
   useRouteError,
 } from "react-router-dom";
 import { z } from "zod";
 import { zx } from "zodix";
+import { ErrorBoundary as DefaultErrorBoundary } from "~/components/error-boundary";
 import { LoginForm } from "~/components/login-form";
 import { client } from "~/lib/api/client";
 import { sessionQueryOptions } from "~/lib/session";
@@ -66,34 +66,9 @@ export function ErrorBoundary() {
         </div>
       );
     }
-
-    return (
-      <div>
-        <h1>
-          {error.status} {error.statusText}
-        </h1>
-        <p>{error.data}</p>
-        <NavLink to="/">Back</NavLink>
-      </div>
-    );
-  } else if (error instanceof Error) {
-    return (
-      <div>
-        <h1>Error</h1>
-        <p>{error.message}</p>
-        <p>The stack trace is:</p>
-        <pre>{error.stack}</pre>
-        <NavLink to="/">Back</NavLink>
-      </div>
-    );
-  } else {
-    return (
-      <>
-        <h1>Unknown Error</h1>
-        <NavLink to="/">Back</NavLink>
-      </>
-    );
   }
+
+  return <DefaultErrorBoundary />;
 }
 
 export function Component() {
