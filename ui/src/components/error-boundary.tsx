@@ -1,5 +1,5 @@
+import { ReactNode, useState } from "react";
 import { NavLink, isRouteErrorResponse, useRouteError } from "react-router-dom";
-import { ReactNode } from "react";
 
 import { Button } from "./ui/button";
 
@@ -31,12 +31,19 @@ export function ErrorBoundary() {
     );
   } else if (error instanceof Error) {
     return (
-      <div className="w-full h-screen flex flex-col gap-4 items-center justify-center">
-        <Header>Error</Header>
-        <p>{error.message}</p>
-        <p>The stack trace is:</p>
-        <pre>{error.stack}</pre>
-        <BackButton />
+      <div className="w-full h-screen flex flex-col items-center justify-center p-32 min-width-0 overflow-x-scroll">
+        <div className="flex flex-col gap-4">
+          <div className="flex items-end gap-4">
+            <Header>Error</Header>
+            <p className="text-slate-700 text-sm">{error.message}</p>
+          </div>
+          <div className="flex flex-col gap-4">
+            <pre className="text-xs text-slate-700 p-4 bg-slate-200 overflow-auto">
+              {error.stack}
+            </pre>
+          </div>
+          <BackButton />
+        </div>
       </div>
     );
   } else {

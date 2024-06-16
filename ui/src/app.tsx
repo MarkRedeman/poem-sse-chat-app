@@ -1,9 +1,9 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { useState } from "react";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import { ErrorBoundary } from "./components/error-boundary";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { EventSourceProvider } from "./lib/use-event-source";
 import { lazy } from "./router";
 
