@@ -8,6 +8,7 @@ import {
 import { z } from "zod";
 import { zx } from "zodix";
 import { ChatForm } from "~/components/chat-form";
+import { ButtonThatThrows } from "~/components/error-boundary";
 import { client } from "~/lib/api/client";
 import { roomQueryOptions } from "~/lib/rooms";
 import { sessionQueryOptions } from "~/lib/session";
@@ -144,6 +145,8 @@ export function Component() {
           })}
         </ol>
       </main>
+
+      <ButtonThatThrows />
 
       <ChatForm />
     </>

@@ -3,7 +3,6 @@
  * Do not make direct changes to the file.
  */
 
-
 export interface paths {
   "/session": {
     get: {
@@ -214,7 +213,13 @@ export interface components {
       messages: components["schemas"]["Message"][];
       users: string[];
     };
-    DomainEvent: components["schemas"]["UserLoggedIn"] | components["schemas"]["UserLoggedOut"] | components["schemas"]["RoomWasCreated"] | components["schemas"]["UserJoinedRoom"] | components["schemas"]["UserLeftRoom"] | components["schemas"]["MessageWasSend"];
+    DomainEvent:
+      | components["schemas"]["UserLoggedIn"]
+      | components["schemas"]["UserLoggedOut"]
+      | components["schemas"]["RoomWasCreated"]
+      | components["schemas"]["UserJoinedRoom"]
+      | components["schemas"]["UserLeftRoom"]
+      | components["schemas"]["MessageWasSend"];
     IndexRoom: {
       /** Format: uuid */
       id: string;

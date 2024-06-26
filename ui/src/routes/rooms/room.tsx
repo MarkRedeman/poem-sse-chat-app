@@ -7,6 +7,7 @@ import {
   useFetcher,
   useParams,
 } from "react-router-dom";
+import { ButtonThatThrows } from "~/components/error-boundary";
 import { API_URL } from "~/lib/api/client";
 import { roomQueryOptions } from "~/lib/rooms";
 import { sessionQueryOptions } from "~/lib/session";
@@ -67,6 +68,8 @@ export function Component() {
           </ul>
         </span>
       </header>
+
+      <ButtonThatThrows />
 
       <Outlet />
     </div>

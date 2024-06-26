@@ -55,3 +55,17 @@ export function ErrorBoundary() {
     );
   }
 }
+
+export function ButtonThatThrows() {
+  const [toThrow, setToThrow] = useState(false);
+
+  if (toThrow) {
+    throw new Error("moi eem");
+  }
+
+  return (
+    <div>
+      <Button onClick={() => setToThrow(true)}>Throw</Button>
+    </div>
+  );
+}

@@ -18,16 +18,19 @@ use uuid::Uuid;
 use crate::Context;
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct UserLoggedIn {
     pub username: String,
 }
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct UserLoggedOut {
     pub username: String,
 }
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct RoomWasCreated {
     pub id: Uuid,
     pub name: String,
@@ -35,6 +38,7 @@ pub struct RoomWasCreated {
 }
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct UserJoinedRoom {
     pub room_id: Uuid,
     pub username: String,
@@ -42,6 +46,7 @@ pub struct UserJoinedRoom {
 }
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct UserLeftRoom {
     pub room_id: Uuid,
     pub username: String,
@@ -49,6 +54,7 @@ pub struct UserLeftRoom {
 }
 
 #[derive(Debug, Object, Clone, Serialize, PartialEq, Eq)]
+#[serde(tag = "type")]
 pub struct MessageWasSend {
     pub id: Uuid,
     pub room_id: Uuid,

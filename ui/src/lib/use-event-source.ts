@@ -1,5 +1,43 @@
 import { createContext, useContext, useEffect, useState } from "react";
 
+// import type { components } from "~/lib/api/api-schema";
+
+// type Schemas = components["schemas"];
+
+// type DomainEventSchema<key extends keyof Schemas> =
+//   Schemas[key] extends Schemas["DomainEvent"] ? Schemas[key] : never;
+
+// // type ConfigurableColumnsKeys<T extends object> = {
+// //   [K in keyof T]: T[K] extends Desc ? K : never
+// // }[keyof T];
+
+// type DomainEventNames = {
+//   [Key in keyof Schemas]: Schemas[Key] extends Schemas["DomainEvent"]
+//     ? Key
+//     : never;
+// }[keyof Schemas];
+
+// type DomainEventKey = Exclude<keyof Schemas, "Message">;
+
+// type DomainEvent<Key extends keyof Schemas> = {
+//   type: Key;
+//   payload: DomainEventSchema<Key>;
+// };
+
+// type Mapish = { [type: keyof Schemas]: boolean };
+
+// // type XX = {
+// //   [key extends keyof Schemas]: { hoi: number }
+// // }
+
+// function getDomainEvent<T extends DomainEventNames>(
+//   type: T,
+//   payload: Schemas[T]
+// ): DomainEvent<T> {
+//   // @ts-expect-error huh
+//   return { type, payload };
+// }
+
 export interface EventSourceOptions {
   init?: EventSourceInit;
   event?: string;
