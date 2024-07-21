@@ -111,7 +111,7 @@ export function Component() {
   );
 
   return (
-    <div className="w-full h-screen grid grid-cols-[400px_1fr] ">
+    <div className="w-full h-screen grid grid-cols-[400px_minmax(0,_1fr)]">
       <aside className="bg-zinc-200 py-8 px-4 flex flex-col gap-4 overflow-y-auto">
         <Header username={sessionQuery.data.username} />
         <div className="flex justify-between items-center">
