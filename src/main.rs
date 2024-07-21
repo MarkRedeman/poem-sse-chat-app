@@ -5,8 +5,8 @@ use std::{collections::HashMap, sync::Arc};
 
 use auth::{protect, AuthData};
 use events::{
-    BroadcastingEventBus, DomainEvent, MessageWasSend, RoomWasCreated, ShareableEventBus,
-    UserJoinedRoom, UserLeftRoom, UserLoggedIn, UserLoggedOut,
+    BroadcastingEventBus, DomainEvent, MessageWasSend, RoomWasCreated, RoomWasRemoved,
+    ShareableEventBus, UserJoinedRoom, UserLeftRoom, UserLoggedIn, UserLoggedOut,
 };
 use poem::{
     endpoint::EmbeddedFileEndpoint,
@@ -109,6 +109,11 @@ struct CreateRoomRequest {
     #[oai(validator(max_length = 256, min_length = 1))]
     name: String,
     created_at: OffsetDateTime,
+}
+
+#[derive(Debug, Object, Clone, Eq, PartialEq)]
+struct RemoveRoomRequest {
+    removed_at: OffsetDateTime,
 }
 
 #[derive(Debug, Object, Clone, Eq, PartialEq)]
@@ -238,6 +243,44 @@ impl Api {
                     messages,
                     users,
                 }))
+            }
+        }
+    }
+
+    #[oai(path = "/rooms/:room_id", method = "delete", transform = "protect")]
+    async fn delete_room(
+        &self,
+        request: Json<RemoveRoomRequest>,
+        ctx: Data<&Context>,
+        room_id: Path<Uuid>,
+    ) -> Result<()> {
+        let rooms = ctx.rooms.lock().await.clone();
+
+        let room = rooms.iter().find(|room| room.id == room_id.0);
+
+        match room {
+            None => Err(Error::from_status(StatusCode::NOT_FOUND)),
+            Some(room) => {
+                let mut rooms = ctx.rooms.lock().await;
+
+                if let Some(pos) = rooms.iter().position(|item| item.id == room_id.0) {
+                    rooms.remove(pos);
+                }
+
+                let mut msgs = ctx.messages_in_room.lock().await;
+                msgs.remove(&room_id.0);
+
+                let mut users = ctx.users_in_room.lock().await;
+                users.remove(&room_id.0);
+
+                ctx.bus
+                    .dispatch_event(DomainEvent::RoomWasRemoved(RoomWasRemoved {
+                        id: room.id,
+                        removed_at: request.removed_at,
+                    }))
+                    .await;
+
+                Ok(())
             }
         }
     }
@@ -490,8 +533,8 @@ mod test {
 
     use crate::{
         events::{
-            DomainEvent, MessageWasSend, RecordingEventBus, RoomWasCreated, UserJoinedRoom,
-            UserLeftRoom, UserLoggedIn, UserLoggedOut,
+            DomainEvent, MessageWasSend, RecordingEventBus, RoomWasCreated, RoomWasRemoved,
+            UserJoinedRoom, UserLeftRoom, UserLoggedIn, UserLoggedOut,
         },
         Context,
     };
@@ -499,7 +542,10 @@ mod test {
     use super::create_app;
 
     use poem::{
-        http::header::{self, SET_COOKIE},
+        http::{
+            header::{self, SET_COOKIE},
+            StatusCode,
+        },
         test::TestClient,
     };
     use serde_json::json;
@@ -753,7 +799,7 @@ mod test {
 
         let recorded_events = bus.recorded_events().await;
         assert_eq!(recorded_events.len(), 7);
-        let var_name = assert_eq!(
+        assert_eq!(
             recorded_events,
             vec![
                 DomainEvent::UserLoggedIn(UserLoggedIn {
@@ -871,6 +917,96 @@ mod test {
             }
         }))
         .await;
+
+        // Remove room
+        let remove_at = OffsetDateTime::parse("2024-06-09T14:00:00Z", &Rfc3339)
+            .expect("Failed to parse date string");
+        let resp = client
+            .delete(format!("/api/rooms/{}", room_id))
+            .header(header::COOKIE, cookie)
+            .header(header::CONTENT_TYPE, "application/json")
+            .body(
+                json!({
+                "removed_at": "2024-06-09T14:00:00Z"
+                })
+                .to_string(),
+            )
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+
+        let resp = client
+            .get(format!("/api/rooms/{}", room_id))
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+        resp.assert_status(StatusCode::NOT_FOUND);
+
+        let resp = client
+            .get(format!("/api/rooms/{}/messages", room_id))
+            .header(header::COOKIE, cookie)
+            .send()
+            .await;
+
+        resp.assert_status_is_ok();
+        resp.assert_json(json!({
+            "items": [],
+            "pagination": {
+                "current_page": 0,
+                "per_page": 0,
+                "total_items": 0,
+                "total_pages": 1,
+                "next_page": null,
+                "previous_page": null
+            }
+        }))
+        .await;
+
+        let recorded_events = bus.recorded_events().await;
+        assert_eq!(recorded_events.len(), 8);
+        assert_eq!(
+            recorded_events,
+            vec![
+                DomainEvent::UserLoggedIn(UserLoggedIn {
+                    username: "Jane".to_string()
+                }),
+                DomainEvent::UserLoggedIn(UserLoggedIn {
+                    username: "John".to_string()
+                }),
+                DomainEvent::RoomWasCreated(RoomWasCreated {
+                    id: room_id,
+                    name: "Lustrum Crash & Compile".to_string(),
+                    created_at: now,
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
+                    room_id,
+                    username: "John".to_string(),
+                    joined_at: now,
+                }),
+                DomainEvent::UserJoinedRoom(UserJoinedRoom {
+                    room_id,
+                    username: "Jane".to_string(),
+                    joined_at: now,
+                }),
+                DomainEvent::MessageWasSend(MessageWasSend {
+                    id: message_id,
+                    room_id,
+                    username: "John".to_string(),
+                    message: "Hoi".to_string(),
+                    send_at: now,
+                }),
+                DomainEvent::UserLeftRoom(UserLeftRoom {
+                    room_id,
+                    username: "John".to_string(),
+                    left_at: now,
+                }),
+                DomainEvent::RoomWasRemoved(RoomWasRemoved {
+                    id: room_id,
+                    removed_at: remove_at,
+                }),
+            ]
+        );
     }
 
     #[tokio::test]
