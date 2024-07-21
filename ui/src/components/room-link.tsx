@@ -16,7 +16,7 @@ export function RoomLink({ room, idx }: { room: Room; idx: number }) {
   const prefetchRoom = usePrefetchRoom();
 
   return (
-    <li>
+    <li aria-labelledby={`room-${room.id}-name`}>
       <NavLink
         to={`/rooms/${room.id}/messages`}
         onPointerEnter={() => {
@@ -41,7 +41,7 @@ export function RoomLink({ room, idx }: { room: Room; idx: number }) {
                 isActive ? "text-green-800" : "text-slate-800"
               }`}
             >
-              <strong>{room.name}</strong>
+              <strong id={`room-${room.id}-name`}>{room.name}</strong>
               <span className={isActive ? "text-green-700" : `text-slate-500`}>
                 {room.lastMessage.content}
               </span>

@@ -118,7 +118,7 @@ export function Component() {
   return (
     <>
       <main className="flex-1 overflow-y-auto flex flex-col justify-end overflow-y-auto">
-        <ol className="flex flex-col gap-3">
+        <ol className="flex flex-col gap-3" aria-label="Messages">
           {messages.map((message, idx) => {
             const isCurrentUser = message.username === username;
 
