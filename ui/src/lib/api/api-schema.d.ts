@@ -75,6 +75,23 @@ export interface paths {
         };
       };
     };
+    delete: {
+      parameters: {
+        path: {
+          room_id: string;
+        };
+      };
+      requestBody: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["RemoveRoomRequest"];
+        };
+      };
+      responses: {
+        200: {
+          content: never;
+        };
+      };
+    };
   };
   "/rooms/{room_id}/users": {
     post: {
@@ -214,7 +231,7 @@ export interface components {
       messages: components["schemas"]["Message"][];
       users: string[];
     };
-    DomainEvent: components["schemas"]["UserLoggedIn"] | components["schemas"]["UserLoggedOut"] | components["schemas"]["RoomWasCreated"] | components["schemas"]["UserJoinedRoom"] | components["schemas"]["UserLeftRoom"] | components["schemas"]["MessageWasSend"];
+    DomainEvent: components["schemas"]["UserLoggedIn"] | components["schemas"]["UserLoggedOut"] | components["schemas"]["RoomWasCreated"] | components["schemas"]["RoomWasRemoved"] | components["schemas"]["UserJoinedRoom"] | components["schemas"]["UserLeftRoom"] | components["schemas"]["MessageWasSend"];
     IndexRoom: {
       /** Format: uuid */
       id: string;
@@ -267,6 +284,10 @@ export interface components {
       /** Format: uint64 */
       previous_page?: number;
     };
+    RemoveRoomRequest: {
+      /** Format: date-time */
+      removed_at: string;
+    };
     Room: {
       /** Format: uuid */
       id: string;
@@ -278,6 +299,12 @@ export interface components {
       name: string;
       /** Format: date-time */
       created_at: string;
+    };
+    RoomWasRemoved: {
+      /** Format: uuid */
+      id: string;
+      /** Format: date-time */
+      removed_at: string;
     };
     SendMessageRequest: {
       /** Format: uuid */
