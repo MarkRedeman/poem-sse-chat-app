@@ -509,12 +509,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let app = create_app(ctx).await?.around(|ep, req| async move {
         let uri = req.uri().clone();
+        let method = req.method().clone();
         let resp = ep.get_response(req).await;
 
         if let Some(operation_id) = resp.data::<OperationId>() {
-            println!("[{}]{} {}", operation_id, uri, resp.status());
+            println!("[{}] {} {} {}", operation_id, method, uri, resp.status());
         } else {
-            println!("{} {}", uri, resp.status());
+            println!("{} {} {}", method, uri, resp.status());
         }
 
         Ok(resp)
