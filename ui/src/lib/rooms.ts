@@ -16,6 +16,8 @@ export const roomsQueryOptions = () => {
     queryFn: async () => {
       const response = await client.GET("/rooms");
 
+      type X = typeof response.data;
+
       if (response.data === undefined) {
         throw response.response;
       }
