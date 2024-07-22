@@ -6,161 +6,25 @@
 
 export interface paths {
   "/session": {
-    get: {
-      responses: {
-        200: {
-          content: {
-            "application/json; charset=utf-8": components["schemas"]["AuthData"];
-          };
-        };
-      };
-    };
-    post: {
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["LoginRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
+    get: operations["session_get"];
+    post: operations["session_post"];
+    delete: operations["session_delete"];
   };
   "/rooms": {
-    get: {
-      responses: {
-        200: {
-          content: {
-            "application/json; charset=utf-8": components["schemas"]["IndexRoom"][];
-          };
-        };
-      };
-    };
-    post: {
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["CreateRoomRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: {
-            "application/json; charset=utf-8": components["schemas"]["Room"];
-          };
-        };
-      };
-    };
+    get: operations["rooms_get"];
+    post: operations["rooms_post"];
   };
   "/rooms/{room_id}": {
-    get: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      responses: {
-        200: {
-          content: {
-            "application/json; charset=utf-8": components["schemas"]["DetailedRoom"];
-          };
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["RemoveRoomRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
+    get: operations["rooms_room_get"];
+    delete: operations["rooms_room_delete"];
   };
   "/rooms/{room_id}/users": {
-    post: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["JoinRoomRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
-    delete: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["LeaveRoomRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
+    post: operations["rooms_room_users_post"];
+    delete: operations["rooms_room_messages_delete"];
   };
   "/rooms/{room_id}/messages": {
-    get: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      responses: {
-        200: {
-          content: {
-            "application/json; charset=utf-8": components["schemas"]["CollectionResponse<Message>"];
-          };
-        };
-      };
-    };
-    post: {
-      parameters: {
-        path: {
-          room_id: string;
-        };
-      };
-      requestBody: {
-        content: {
-          "application/json; charset=utf-8": components["schemas"]["SendMessageRequest"];
-        };
-      };
-      responses: {
-        200: {
-          content: never;
-        };
-      };
-    };
+    get: operations["rooms_room_messages_get"];
+    post: operations["rooms_room_messages_post"];
   };
   "/events": {
     get: {
@@ -345,4 +209,153 @@ export type $defs = Record<string, never>;
 
 export type external = Record<string, never>;
 
-export type operations = Record<string, never>;
+export interface operations {
+
+  session_get: {
+    responses: {
+      200: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["AuthData"];
+        };
+      };
+    };
+  };
+  session_post: {
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["LoginRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+  session_delete: {
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+  rooms_get: {
+    responses: {
+      200: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["IndexRoom"][];
+        };
+      };
+    };
+  };
+  rooms_post: {
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["CreateRoomRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["Room"];
+        };
+      };
+    };
+  };
+  rooms_room_get: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    responses: {
+      200: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["DetailedRoom"];
+        };
+      };
+    };
+  };
+  rooms_room_delete: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["RemoveRoomRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+  rooms_room_users_post: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["JoinRoomRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+  rooms_room_messages_delete: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["LeaveRoomRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+  rooms_room_messages_get: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    responses: {
+      200: {
+        content: {
+          "application/json; charset=utf-8": components["schemas"]["CollectionResponse<Message>"];
+        };
+      };
+    };
+  };
+  rooms_room_messages_post: {
+    parameters: {
+      path: {
+        room_id: string;
+      };
+    };
+    requestBody: {
+      content: {
+        "application/json; charset=utf-8": components["schemas"]["SendMessageRequest"];
+      };
+    };
+    responses: {
+      200: {
+        content: never;
+      };
+    };
+  };
+}

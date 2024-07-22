@@ -1,0 +1,701 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Hello World",
+    "version": "1.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api"
+    }
+  ],
+  "tags": [],
+  "paths": {
+    "/session": {
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "session_post"
+      },
+      "delete": {
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "session_delete"
+      },
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthData"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "session_get"
+      }
+    },
+    "/rooms": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/IndexRoom"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "operationId": "rooms_get"
+      },
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/Room"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "rooms_post"
+      }
+    },
+    "/rooms/{room_id}": {
+      "get": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailedRoom"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "rooms_room_get"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/RemoveRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "rooms_room_delete"
+      }
+    },
+    "/rooms/{room_id}/users": {
+      "post": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "rooms_room_users_post"
+      },
+      "delete": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/LeaveRoomRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "rooms_room_messages_delete"
+      }
+    },
+    "/rooms/{room_id}/messages": {
+      "post": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json; charset=utf-8": {
+              "schema": {
+                "$ref": "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "operationId": "rooms_room_messages_post"
+      },
+      "get": {
+        "parameters": [
+          {
+            "name": "room_id",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "in": "path",
+            "required": true,
+            "deprecated": false,
+            "explode": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/CollectionResponse<Message>"
+                }
+              }
+            }
+          }
+        },
+        "operationId": "rooms_room_messages_get"
+      }
+    },
+    "/events": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "array",
+                  "format": "event-stream",
+                  "items": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/events/{room_id}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "array",
+                  "format": "event-stream",
+                  "items": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/generate-events": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/get-event-types": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/DomainEvent"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AuthData": {
+        "type": "object",
+        "required": ["username"],
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "CollectionResponse<Message>": {
+        "type": "object",
+        "required": ["items", "pagination"],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "CreateRoomRequest": {
+        "type": "object",
+        "required": ["id", "name", "created_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "DetailedRoom": {
+        "type": "object",
+        "required": ["id", "name", "messages", "users"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            }
+          },
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "DomainEvent": {
+        "type": "object",
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/UserLoggedIn"
+          },
+          {
+            "$ref": "#/components/schemas/UserLoggedOut"
+          },
+          {
+            "$ref": "#/components/schemas/RoomWasCreated"
+          },
+          {
+            "$ref": "#/components/schemas/RoomWasRemoved"
+          },
+          {
+            "$ref": "#/components/schemas/UserJoinedRoom"
+          },
+          {
+            "$ref": "#/components/schemas/UserLeftRoom"
+          },
+          {
+            "$ref": "#/components/schemas/MessageWasSend"
+          }
+        ]
+      },
+      "IndexRoom": {
+        "type": "object",
+        "required": ["id", "name", "joined"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "joined": {
+            "type": "boolean"
+          },
+          "last_message": {
+            "$ref": "#/components/schemas/Message"
+          }
+        }
+      },
+      "JoinRoomRequest": {
+        "type": "object",
+        "required": ["joined_at"],
+        "properties": {
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LeaveRoomRequest": {
+        "type": "object",
+        "required": ["left_at"],
+        "properties": {
+          "left_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["username"],
+        "properties": {
+          "username": {
+            "type": "string",
+            "maxLength": 256,
+            "minLength": 1
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "required": ["id", "room_id", "username", "message", "send_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "MessageWasSend": {
+        "type": "object",
+        "required": ["id", "room_id", "username", "message", "send_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "room_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "required": ["total_items", "per_page", "total_pages", "current_page"],
+        "properties": {
+          "total_items": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "per_page": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "total_pages": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "current_page": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "next_page": {
+            "type": "integer",
+            "format": "uint64"
+          },
+          "previous_page": {
+            "type": "integer",
+            "format": "uint64"
+          }
+        }
+      },
+      "RemoveRoomRequest": {
+        "type": "object",
+        "required": ["removed_at"],
+        "properties": {
+          "removed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "Room": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
+      },
+      "RoomWasCreated": {
+        "type": "object",
+        "required": ["id", "name", "created_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "RoomWasRemoved": {
+        "type": "object",
+        "required": ["id", "removed_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "removed_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SendMessageRequest": {
+        "type": "object",
+        "required": ["id", "message", "send_at"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "message": {
+            "type": "string",
+            "maxLength": 1024,
+            "minLength": 1
+          },
+          "send_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserJoinedRoom": {
+        "type": "object",
+        "required": ["room_id", "username", "joined_at"],
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "joined_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserLeftRoom": {
+        "type": "object",
+        "required": ["room_id", "username", "left_at"],
+        "properties": {
+          "room_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "username": {
+            "type": "string"
+          },
+          "left_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "UserLoggedIn": {
+        "type": "object",
+        "required": ["username"],
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "UserLoggedOut": {
+        "type": "object",
+        "required": ["username"],
+        "properties": {
+          "username": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

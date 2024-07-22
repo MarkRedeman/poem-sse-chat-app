@@ -136,7 +136,7 @@ struct LeaveRoomRequest {
 
 #[OpenApi]
 impl Api {
-    #[oai(path = "/session", method = "post")]
+    #[oai(path = "/session", method = "post", operation_id = "session_post")]
     async fn login(
         &self,
         ctx: Data<&Context>,
@@ -154,7 +154,12 @@ impl Api {
         Ok(())
     }
 
-    #[oai(path = "/session", method = "delete", transform = "protect")]
+    #[oai(
+        path = "/session",
+        method = "delete",
+        transform = "protect",
+        operation_id = "session_delete"
+    )]
     async fn logout(
         &self,
         ctx: Data<&Context>,
@@ -174,14 +179,24 @@ impl Api {
         Ok(())
     }
 
-    #[oai(path = "/session", method = "get", transform = "protect")]
+    #[oai(
+        path = "/session",
+        method = "get",
+        transform = "protect",
+        operation_id = "session_get"
+    )]
     async fn get_username(&self, auth_data: Data<&AuthData>) -> Result<Json<AuthData>> {
         Ok(Json(AuthData {
             username: auth_data.username.clone(),
         }))
     }
 
-    #[oai(path = "/rooms", method = "get", transform = "protect")]
+    #[oai(
+        path = "/rooms",
+        method = "get",
+        transform = "protect",
+        operation_id = "rooms_get"
+    )]
     async fn get_rooms(&self, ctx: Data<&Context>) -> Result<Json<Vec<IndexRoom>>> {
         let rooms = ctx.rooms.lock().await.clone();
         let messages_lock = ctx.messages_in_room.lock().await;
@@ -208,7 +223,12 @@ impl Api {
         Ok(Json(rooms))
     }
 
-    #[oai(path = "/rooms/:room_id", method = "get", transform = "protect")]
+    #[oai(
+        path = "/rooms/:room_id",
+        method = "get",
+        transform = "protect",
+        operation_id = "rooms_room_get"
+    )]
     async fn get_room(
         &self,
         ctx: Data<&Context>,
@@ -247,7 +267,12 @@ impl Api {
         }
     }
 
-    #[oai(path = "/rooms/:room_id", method = "delete", transform = "protect")]
+    #[oai(
+        path = "/rooms/:room_id",
+        method = "delete",
+        transform = "protect",
+        operation_id = "rooms_room_delete"
+    )]
     async fn delete_room(
         &self,
         request: Json<RemoveRoomRequest>,
@@ -285,7 +310,12 @@ impl Api {
         }
     }
 
-    #[oai(path = "/rooms", method = "post", transform = "protect")]
+    #[oai(
+        path = "/rooms",
+        method = "post",
+        transform = "protect",
+        operation_id = "rooms_post"
+    )]
     async fn create_room(
         &self,
         ctx: Data<&Context>,
@@ -327,7 +357,12 @@ impl Api {
         Ok(Json(room))
     }
 
-    #[oai(path = "/rooms/:room_id/users", method = "post", transform = "protect")]
+    #[oai(
+        path = "/rooms/:room_id/users",
+        method = "post",
+        transform = "protect",
+        operation_id = "rooms_room_users_post"
+    )]
     async fn join_room(
         &self,
         room_id: Path<Uuid>,
@@ -358,7 +393,8 @@ impl Api {
     #[oai(
         path = "/rooms/:room_id/messages",
         method = "post",
-        transform = "protect"
+        transform = "protect",
+        operation_id = "rooms_room_messages_post"
     )]
     async fn send_message(
         &self,
@@ -396,7 +432,8 @@ impl Api {
     #[oai(
         path = "/rooms/:room_id/messages",
         method = "get",
-        transform = "protect"
+        transform = "protect",
+        operation_id = "rooms_room_messages_get"
     )]
     async fn get_messages(
         &self,
@@ -430,7 +467,8 @@ impl Api {
     #[oai(
         path = "/rooms/:room_id/users",
         method = "delete",
-        transform = "protect"
+        transform = "protect",
+        operation_id = "rooms_room_messages_delete"
     )]
     async fn leave_room(
         &self,
