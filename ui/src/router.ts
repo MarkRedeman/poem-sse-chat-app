@@ -34,3 +34,22 @@ export function lazy<
     return { ...imported, loader, action };
   };
 }
+
+// export const route = defineRoute((context) => {
+//   return {
+//     Component,
+//     action: buildAction(context),
+//   };
+// });
+
+// type RouteDefinition = (context: AppContext) => RouteObject;
+// export function defineRoute(cb: RouteDefinition): RouteDefinition {
+//   return cb;
+// }
+
+// export function buildRoutes(
+//   ctx: AppContext,
+//   routes: RouteObject[]
+// ): RouteObject[] {
+//   return routes;
+// }
