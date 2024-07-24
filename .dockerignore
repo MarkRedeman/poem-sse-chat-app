@@ -1,0 +1,8 @@
+target/
+tests/
+Dockerfile
+.dockerignore
+.git
+.gitignore
+ui
+!ui/dist
