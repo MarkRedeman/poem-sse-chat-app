@@ -9,8 +9,7 @@ use events::{
     ShareableEventBus, UserJoinedRoom, UserLeftRoom, UserLoggedIn, UserLoggedOut,
 };
 use poem::{
-    endpoint::EmbeddedFileEndpoint,
-    endpoint::EmbeddedFilesEndpoint,
+    endpoint::StaticFilesEndpoint,
     http::StatusCode,
     listener::TcpListener,
     middleware::Cors,
@@ -19,7 +18,6 @@ use poem::{
     Endpoint, EndpointExt, Error, Result, Route, Server,
 };
 use poem_openapi::{param::Path, payload::Json, Object, OpenApi, OpenApiService, OperationId};
-use rust_embed::RustEmbed;
 use serde::Serialize;
 use time::OffsetDateTime;
 use tokio::sync::{broadcast, Mutex};
@@ -498,15 +496,6 @@ pub struct Context {
     users_in_room: Arc<Mutex<HashMap<Uuid, Vec<String>>>>,
 }
 
-#[derive(RustEmbed)]
-#[folder = "ui/dist"]
-#[include = "./index.html"]
-pub struct Files;
-
-#[derive(RustEmbed)]
-#[folder = "ui/dist/assets"]
-pub struct AssetFiles;
-
 pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::error::Error>> {
     let all_endpoints = (Api, events::Api);
 
@@ -522,8 +511,12 @@ pub async fn create_app(ctx: Context) -> Result<impl Endpoint, Box<dyn std::erro
         .nest("/api", api_service)
         .nest("/api/docs", ui)
         .nest("/spec.json", spec)
-        .nest("/assets", EmbeddedFilesEndpoint::<AssetFiles>::new())
-        .at("/*", EmbeddedFileEndpoint::<Files>::new("./index.html"))
+        .nest(
+            "/",
+            StaticFilesEndpoint::new("./ui/dist")
+                .index_file("index.html")
+                .fallback_to_index(),
+        )
         .data(ctx)
         .with(CookieSession::new(cookie_config))
         .with(cors))
